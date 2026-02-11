@@ -26,6 +26,7 @@ jobs:
       - name: Run crawler.py
         env:
           API_KEY: ${{ secrets.BIKE_API_KEY }}
+          CONTRACT_NAME: ${{ secrets.BIKE_CONTRACT_NAME }}  # ← 新增這行
           DB_HOST: ${{ secrets.BIKE_DB_HOST }}
           DB_PORT: ${{ secrets.BIKE_DB_PORT }}
           DB_USER: ${{ secrets.BIKE_DB_USER }}
