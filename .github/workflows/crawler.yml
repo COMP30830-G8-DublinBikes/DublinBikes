@@ -21,13 +21,14 @@ jobs:
           python-version: "3.10"
       
       - name: Install Python Dependency
-        run: pip install -r requirements.txt  # 改用 requirements.txt
+        run: pip install -r requirements.txt
       
-      - name: Run crawler.py  #Lily的檔案名稱
+      - name: Run crawler.py
         env:
-          API_KEY: ${{ secrets.bike.API_KEY }}
-          DB_HOST: ${{ secrets.bike.DB_HOST }}
-          DB_USER: ${{ secrets.bike.DB_USER }}
-          DB_PASSWORD: ${{ secrets.bike.DB_PASSWORD }}
-          DB_PORT: ${{ secrets.bike.DB_PORT }}  # Aiven 需要指定 port
-        run: python crawler.py #Lily的檔案名稱
+          API_KEY: ${{ secrets.BIKE_API_KEY }}
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PORT: ${{ secrets.DB_PORT }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+        run: python crawler.py
