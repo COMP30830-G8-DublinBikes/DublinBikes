@@ -20,9 +20,16 @@ DB_USER = get_env('DB_USER')
 DB_PASSWORD = get_env('DB_PASSWORD')
 DB_NAME = get_env('DB_NAME')
 
-# 建立資料庫連線
-connection_string = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}?ssl_mode=REQUIRED"
-engine = create_engine(connection_string)
+# 建立資料庫連線（修正 SSL 參數）
+connection_string = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
+
+# 使用 connect_args 傳遞 SSL 設定
+engine = create_engine(
+    connection_string,
+    connect_args={
+        'ssl': {'ssl-mode': 'REQUIRED'}
+    }
+)
 
 def create_tables():
     """建立 station 和 availability 資料表（如果不存在）"""
@@ -62,11 +69,11 @@ def create_tables():
     with engine.connect() as conn:
         conn.execute(text(sql_station))
         conn.commit()
-        print(" Table 'station' is ready")
+        print("✅ Table 'station' is ready")
         
         conn.execute(text(sql_availability))
         conn.commit()
-        print(" Table 'availability' is ready")
+        print("✅ Table 'availability' is ready")
 
 def stations_to_db(stations):
     """將 JCDecaux API 資料寫入資料庫"""
@@ -121,7 +128,7 @@ def stations_to_db(stations):
 def fetch_and_store():
     """主要執行函數"""
     try:
-        print(f" [{datetime.datetime.now()}] Starting to fetch data...")
+        print(f"🔍 [{datetime.datetime.now()}] Starting to fetch data...")
         
         # 1. 建立資料表（如果不存在）
         create_tables()
@@ -137,18 +144,18 @@ def fetch_and_store():
         response.raise_for_status()
         stations = response.json()
         
-        print(f" Fetched {len(stations)} bike stations from JCDecaux API")
+        print(f"✅ Fetched {len(stations)} bike stations from JCDecaux API")
         
         # 3. 寫入資料庫
         stations_to_db(stations)
         
-        print(f" Successfully inserted data for {len(stations)} stations")
+        print(f"✅ Successfully inserted data for {len(stations)} stations")
         print(f"   Static data → station table")
         print(f"   Dynamic data → availability table")
         print(f"   Timestamp: {datetime.datetime.now()}")
         
     except Exception as e:
-        print(f" Error: {e}")
+        print(f"❌ Error: {e}")
         import traceback
         traceback.print_exc()
         raise
