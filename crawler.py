@@ -1,9 +1,8 @@
 import requests
 import os
-import pymysql
 import json
 import datetime
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 
 def get_env(key, default=None):
     """安全地讀取環境變數"""
@@ -12,14 +11,14 @@ def get_env(key, default=None):
         raise ValueError(f"環境變數 {key} 未設定")
     return value
 
-# 讀取環境變數（對應 YML 的 env 設定）
-JCKEY = get_env('API_KEY')              # 來自 secrets.BIKE_API_KEY
-CONTRACT_NAME = get_env('CONTRACT_NAME') # 來自 secrets.BIKE_CONTRACT_NAME
-DB_HOST = get_env('DB_HOST')            # 來自 secrets.BIKE_DB_HOST
-DB_PORT = int(get_env('DB_PORT', 3306)) # 來自 secrets.BIKE_DB_PORT
-DB_USER = get_env('DB_USER')            # 來自 secrets.BIKE_DB_USER
-DB_PASSWORD = get_env('DB_PASSWORD')    # 來自 secrets.BIKE_DB_PASSWORD
-DB_NAME = get_env('DB_NAME')            # 來自 secrets.BIKE_DB_NAME
+# 讀取環境變數
+JCKEY = get_env('API_KEY')
+CONTRACT_NAME = get_env('CONTRACT_NAME')
+DB_HOST = get_env('DB_HOST')
+DB_PORT = int(get_env('DB_PORT', 3306))
+DB_USER = get_env('DB_USER')
+DB_PASSWORD = get_env('DB_PASSWORD')
+DB_NAME = get_env('DB_NAME')
 
 # 建立資料庫連線
 connection_string = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}?ssl_mode=REQUIRED"
@@ -41,10 +40,8 @@ def create_tables():
         position_lng FLOAT,
         bonus INTEGER,
         overflow INTEGER
-    );
+    )
     """
-    engine.execute(sql_station)
-    print(" Table 'station' is ready")
     
     # 建立 availability 表
     sql_availability = """
@@ -58,47 +55,68 @@ def create_tables():
         electrical_bikes INTEGER,
         total_bike_stands INTEGER,
         PRIMARY KEY (number, last_update)
-    );
+    )
     """
-    engine.execute(sql_availability)
-    print(" Table 'availability' is ready")
+    
+    # 使用 connection 執行 SQL
+    with engine.connect() as conn:
+        conn.execute(text(sql_station))
+        conn.commit()
+        print(" Table 'station' is ready")
+        
+        conn.execute(text(sql_availability))
+        conn.commit()
+        print(" Table 'availability' is ready")
 
 def stations_to_db(stations):
-    """
-    將 JCDecaux API 資料寫入資料庫
-    參考組員的 jc_decaux_local_download.py
-    """
-    for station in stations:
-        # 插入 station 表（靜態資料）
-        vals_station = (
-            station.get('number'),
-            station.get('address'),
-            1 if station.get('banking') else 0,
-            station.get('bike_stands'),
-            station.get('name'),
-            station.get('status'),
-            station.get('position', {}).get('lat'),
-            station.get('position', {}).get('lng'),
-            1 if station.get('bonus') else 0,
-            1 if station.get('overflow') else 0
-        )
-        sql_station = "INSERT IGNORE INTO station VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
-        engine.execute(sql_station, vals_station)
+    """將 JCDecaux API 資料寫入資料庫"""
+    
+    with engine.connect() as conn:
+        for station in stations:
+            # 插入 station 表（靜態資料）
+            vals_station = {
+                'number': station.get('number'),
+                'address': station.get('address'),
+                'banking': 1 if station.get('banking') else 0,
+                'bike_stands': station.get('bike_stands'),
+                'name': station.get('name'),
+                'status': station.get('status'),
+                'position_lat': station.get('position', {}).get('lat'),
+                'position_lng': station.get('position', {}).get('lng'),
+                'bonus': 1 if station.get('bonus') else 0,
+                'overflow': 1 if station.get('overflow') else 0
+            }
+            
+            sql_station = text("""
+                INSERT IGNORE INTO station 
+                VALUES (:number, :address, :banking, :bike_stands, :name, :status, 
+                        :position_lat, :position_lng, :bonus, :overflow)
+            """)
+            conn.execute(sql_station, vals_station)
+            
+            # 插入 availability 表（動態資料）
+            last_update = datetime.datetime.fromtimestamp(station.get('last_update') / 1000)
+            
+            vals_avail = {
+                'number': station.get('number'),
+                'available_bikes': station.get('available_bikes'),
+                'available_bike_stands': station.get('available_bike_stands'),
+                'last_update': last_update,
+                'status': station.get('status'),
+                'mechanical_bikes': station.get('mechanical_bikes', 0),
+                'electrical_bikes': station.get('electrical_bikes', 0),
+                'total_bike_stands': station.get('bike_stands')
+            }
+            
+            sql_avail = text("""
+                INSERT IGNORE INTO availability 
+                VALUES (:number, :available_bikes, :available_bike_stands, :last_update, 
+                        :status, :mechanical_bikes, :electrical_bikes, :total_bike_stands)
+            """)
+            conn.execute(sql_avail, vals_avail)
         
-        # 插入 availability 表（動態資料）
-        last_update = datetime.datetime.fromtimestamp(station.get('last_update') / 1000)
-        vals_avail = (
-            station.get('number'),
-            station.get('available_bikes'),
-            station.get('available_bike_stands'),
-            last_update,
-            station.get('status'),
-            station.get('mechanical_bikes', 0),
-            station.get('electrical_bikes', 0),
-            station.get('bike_stands')
-        )
-        sql_avail = "INSERT IGNORE INTO availability VALUES (%s, %s, %s, %s, %s, %s, %s, %s)"
-        engine.execute(sql_avail, vals_avail)
+        # 提交所有變更
+        conn.commit()
 
 def fetch_and_store():
     """主要執行函數"""
@@ -124,7 +142,7 @@ def fetch_and_store():
         # 3. 寫入資料庫
         stations_to_db(stations)
         
-        print(f"   Successfully inserted data for {len(stations)} stations")
+        print(f" Successfully inserted data for {len(stations)} stations")
         print(f"   Static data → station table")
         print(f"   Dynamic data → availability table")
         print(f"   Timestamp: {datetime.datetime.now()}")
