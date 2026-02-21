@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- To scale based on the device -->
+    <title>{{ title }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}"> <!-- This is resolved by Flask -->
+</head>
+<body>
+    <h1>Welcome to G8 Bike data</h1>
+    <p>This is the homepage of the Flask app.</p>
+    <div id="data-container">
+        <h3>real time information</h3>
+        <table id="bike-table">
+            <thead>
+                <tr>
+                    <th>mame</th>
+                    <th>stutas</th>
+                    <th>available_bike_stands</th>
+                    <th>available_bikes</th>
+                </tr>
+            </thead>
+            <tbody id="bike-data-body">
+                <tr><td colspan="4">loading...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <hr>
+    <a href="{{ url_for('about') }}">Go to About Page</a>
+
+    <script>
+        // 呼叫你在 app.py 寫好的 API
+        fetch('/api/bike/current')
+            .then(response => {
+                if (!response.ok) throw new Error('API fail');
+                return response.json();
+            })
+            .then(data => {
+                const tableBody = document.getElementById('bike-data-body');
+                tableBody.innerHTML = ''; // 清空載入中文字
+
+                // 取前 5 筆資料來展示即可 (滿足 Display 1 feature 指標)
+                data.slice(0, 5).forEach(station => {
+                    const row = `
+                        <tr>
+                            <td>${station.name}</td>
+                            <td>${station.status}</td>
+                            <td>${station.available_bikes}</td>
+                            <td>${station.available_bike_stands}</td>
+                        </tr>
+                    `;
+                    tableBody.innerHTML += row;
+                });
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('bike-data-body').innerHTML = 
+                    `<tr><td colspan="4" style="color:red;">錯誤: ${error.message}</td></tr>`;
+            });
+    </script>
+</body>
+</html>

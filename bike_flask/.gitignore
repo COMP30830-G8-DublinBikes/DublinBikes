@@ -1,0 +1,4 @@
+# 遮蔽資料庫資訊檔案
+dbinfo.py
+config.php
+.env
