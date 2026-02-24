@@ -1,63 +1,90 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- To scale based on the device -->
-    <title>{{ title }}</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}"> <!-- This is resolved by Flask -->
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>BikeShare – Dublin Bikes</title>
+  <link rel="stylesheet" href="/static/styles.css" />
 </head>
 <body>
-    <h1>Welcome to G8 Bike data</h1>
-    <p>This is the homepage of the Flask app.</p>
-    <div id="data-container">
-        <h3>real time information</h3>
-        <table id="bike-table">
-            <thead>
-                <tr>
-                    <th>mame</th>
-                    <th>stutas</th>
-                    <th>available_bike_stands</th>
-                    <th>available_bikes</th>
-                </tr>
-            </thead>
-            <tbody id="bike-data-body">
-                <tr><td colspan="4">loading...</td></tr>
-            </tbody>
-        </table>
+  <div class="container">
+    <div class="topbar">
+      <div class="brand">
+        <div class="dot">🚲</div>
+        BikeShare
+      </div>
+
+      <div class="search">
+        <input placeholder="Search station name or address..." />
+      </div>
+
+      <!-- clickable weather bar -->
+      <div class="weather-pill" id="weather-pill" title="Click to see forecast">
+        <div class="badge">
+          <span id="wx-icon">☁️</span>
+          <span id="wx-temp">--°C</span>
+        </div>
+        <div class="muted" id="wx-pop">--% rain</div>
+      </div>
     </div>
 
-    <hr>
-    <a href="{{ url_for('about') }}">Go to About Page</a>
+    <div class="main">
+      <!-- Legend (left bottom) -->
+      <div class="legend">
+        <h3>Legend</h3>
+        <div class="item"><span class="dotc green">5+</span> High Availability (50%+ bikes)</div>
+        <div class="item"><span class="dotc orange">≈</span> Medium Availability (10–50%)</div>
+        <div class="item"><span class="dotc red">!</span> Low Availability (&lt;10%)</div>
+        <hr />
+        <div class="item"><span class="dotc yellow">★</span> Points of Interest</div>
+      </div>
 
-    <script>
-        // 呼叫你在 app.py 寫好的 API
-        fetch('/api/bike/current')
-            .then(response => {
-                if (!response.ok) throw new Error('API fail');
-                return response.json();
-            })
-            .then(data => {
-                const tableBody = document.getElementById('bike-data-body');
-                tableBody.innerHTML = ''; // 清空載入中文字
+      <!-- Right panel (mockup style placeholder) -->
+      <div class="panel">
+        <div class="head">
+          Historic Quarter Stop
+          <span style="opacity:.85;font-size:14px;">♡ ✕</span>
+        </div>
+        <div class="body">
+          <div class="bar">
+            <strong>High Availability</strong>
+            <span><strong>90%</strong> available</span>
+          </div>
 
-                // 取前 5 筆資料來展示即可 (滿足 Display 1 feature 指標)
-                data.slice(0, 5).forEach(station => {
-                    const row = `
-                        <tr>
-                            <td>${station.name}</td>
-                            <td>${station.status}</td>
-                            <td>${station.available_bikes}</td>
-                            <td>${station.available_bike_stands}</td>
-                        </tr>
-                    `;
-                    tableBody.innerHTML += row;
-                });
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                document.getElementById('bike-data-body').innerHTML = 
-                    `<tr><td colspan="4" style="color:red;">錯誤: ${error.message}</td></tr>`;
-            });
-    </script>
+          <div class="cards">
+            <div class="card">
+              <div class="small">Bikes Available</div>
+              <div class="big" id="bikesAvailable">--</div>
+            </div>
+            <div class="card">
+              <div class="small">Docks Available</div>
+              <div class="big" id="docksAvailable">--</div>
+            </div>
+          </div>
+
+          <div class="small" style="text-align:center;margin-bottom:14px;">Total Capacity: 20 bikes</div>
+          <button class="btn">Navigate with Google Maps</button>
+          <div class="small" style="text-align:center;margin-top:8px;">Opens directions in a new tab</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Weather drawer -->
+  <div class="drawer-backdrop" id="drawer-backdrop"></div>
+  <aside class="drawer" id="drawer">
+    <div class="dhead">
+      <h2>Weather forecast</h2>
+      <button id="drawer-close">Close</button>
+    </div>
+    <div class="content">
+      <div class="small">Current</div>
+      <pre id="drawer-current" style="white-space:pre-wrap; margin:10px 0 14px 0;">Loading...</pre>
+      <div class="small">Next 7 days</div>
+      <div class="forecast-grid" id="drawer-forecast">Loading...</div>
+    </div>
+  </aside>
+
+  <script src="/static/app.js"></script>
 </body>
 </html>
