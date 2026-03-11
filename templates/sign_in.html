@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sign in – BikeShare</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <div class="container">
+    <div class="topbar">
+      <div class="brand">
+        <div class="dot">🚲</div>
+        BikeShare
+      </div>
+      <div class="search">
+        <input placeholder="Search station name or address..." disabled />
+      </div>
+      <div class="weather-pill" style="opacity:.65; cursor:default;">
+        <div class="badge">☁️ <span>--°C</span></div>
+        <div class="muted">--% rain</div>
+      </div>
+    </div>
+
+    <div style="max-width:520px;margin:26px auto;">
+      <div style="background:var(--card); border:1px solid var(--line); border-radius:var(--radius-lg); box-shadow:var(--shadow); overflow:hidden;">
+        <div style="background:linear-gradient(180deg, var(--brand), var(--brand-2)); color:#fff; padding:18px 16px; font-weight:900; font-size:20px;">
+          Sign in
+        </div>
+        <div style="padding:18px 16px;">
+          <label class="small">Email</label>
+          <input style="width:100%; margin-top:6px; margin-bottom:12px; border:1px solid var(--line); border-radius:14px; padding:12px 12px; font-size:14px;"
+                 type="email" placeholder="name@example.com" />
+
+          <label class="small">Password</label>
+          <input style="width:100%; margin-top:6px; margin-bottom:14px; border:1px solid var(--line); border-radius:14px; padding:12px 12px; font-size:14px;"
+                 type="password" placeholder="••••••••" />
+
+          <button class="btn" type="button" onclick="window.location.href='/'">Sign in</button>
+
+          <p class="small" style="margin-top:12px;">
+            Sprint 2 mockup only — no authentication implemented yet.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
