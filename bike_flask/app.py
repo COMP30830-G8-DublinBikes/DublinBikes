@@ -3,15 +3,22 @@ from __future__ import annotations
 import os
 import datetime as dt
 from typing import Any, Dict, List, Optional
+from dotenv import load_dotenv
+load_dotenv()  # read .env 
 
 import pymysql
 import requests
 from flask import Flask, jsonify, render_template, request
+from werkzeug.security import generate_password_hash, check_password_hash
+
 
 # -----------------------------
 # App
 # -----------------------------
 app = Flask(__name__)
+# Session key , load from env，on EC2 should set a random string 
+app.secret_key = os.getenv("FLASK_SECRET_KEY", "dev-secret-key-change-in-production")
+
 
 # -----------------------------
 # Config: OpenWeather 座標
@@ -32,27 +39,31 @@ TBL_WEATHER_HOURLY  = "weather_hourly"
 TBL_WEATHER_DAILY   = "weather_daily"
 TBL_STATION         = "station"
 TBL_AVAILABILITY    = "availability"
+TBL_USERS           = "users"
 
 
-# -----------------------------
-# Helpers: API Key 讀取
-# 優先讀環境變數，沒有才 fallback 到 dbinfo.py
-# -----------------------------
+
+# ==============================
+# Helpers: API Key / Config 讀取
+# 優先讀 .env（環境變數），沒有才 fallback 到 dbinfo.py
+# ==============================
+
 
 def get_jc_cfg() -> tuple[str, str]:
     """取得 JCDecaux API key 和 contract name"""
     api_key  = os.getenv("JCDECAUX_API_KEY")
-    contract = os.getenv("JCDECAUX_CONTRACT")
+    contract = os.getenv("JCDECAUX_CONTRACT", "dublin")
 
-    if api_key and contract:
+    if api_key:
         return api_key, contract
 
+    # fallback: dbinfo.py（本地開發備用）
     try:
         import dbinfo  # type: ignore
         return dbinfo.JCKEY, dbinfo.NAME
     except Exception as e:
         raise RuntimeError(
-            "Missing JCDecaux config. Set JCDECAUX_API_KEY/JCDECAUX_CONTRACT env vars or add JCKEY/NAME to dbinfo.py"
+            "Missing JCDecaux config. Add JCDECAUX_API_KEY to .env or dbinfo.py"
         ) from e
 
 
@@ -76,7 +87,7 @@ def get_db_cfg() -> Dict[str, str]:
     env_user = os.getenv("DB_USER")
     env_pass = os.getenv("DB_PASS")
     env_host = os.getenv("DB_URI")
-    env_port = os.getenv("DB_PORT")
+    env_port = os.getenv("DB_PORT", "3306")
     env_name = os.getenv("DB_NAME")
 
     if all([env_user, env_pass, env_host, env_port, env_name]):
@@ -375,6 +386,165 @@ def get_bike_history(station_id: int):
     """
     rows = q(sql, (station_id,))
     return jsonify({"ok": True, "source": "db", "history": rows})
+
+
+@app.get("/api/db/bikes/hourly_avg/<int:station_id>")
+def get_hourly_avg(station_id: int):
+    """
+    Member B 核心任務：API 重構
+    將每 5 分鐘一筆的數據聚合為每小時平均值，方便前端 Chart.js 繪圖。
+    """
+    hours = int(request.args.get("hours", "48"))
+    sql = f"""
+        SELECT 
+            DATE_FORMAT(last_update, '%%Y-%%m-%%d %%H:00:00') AS hour_group,
+            ROUND(AVG(available_bikes), 1)                     AS avg_bikes,
+            ROUND(AVG(available_bike_stands), 1)               AS avg_stands,
+            COUNT(*)                                           AS sample_count
+        FROM {TBL_AVAILABILITY}
+        WHERE number = %s 
+          AND last_update >= (UTC_TIMESTAMP() - INTERVAL %s HOUR)
+        GROUP BY hour_group
+        ORDER BY hour_group ASC
+    """
+    rows = q(sql, (station_id, hours))
+    return jsonify({"ok": True, "station_id": station_id, "hours": hours, "data": rows})
+
+# ==============================
+# Task 2: Advanced SQL
+# ==============================
+
+@app.get("/api/analytics/weather-impact/<int:station_id>")
+def get_weather_impact(station_id: int):
+    """
+    Member B 核心任務：進階 SQL 查詢
+    關聯天氣與單車數據，分析不同天氣對該車站可用數量的影響。
+    """
+    sql = f"""
+        SELECT 
+            w.weather_main, 
+            ROUND(AVG(a.available_bikes), 1)       AS avg_bikes,
+            ROUND(AVG(a.available_bike_stands), 1) AS avg_stands,
+            COUNT(*)                               AS sample_size
+        FROM {TBL_AVAILABILITY} AS a
+        JOIN {TBL_WEATHER_CURRENT} AS w 
+          ON ABS(TIMESTAMPDIFF(MINUTE, a.last_update, w.dt)) < 10
+        WHERE a.number = %s
+        GROUP BY w.weather_main
+        ORDER BY avg_bikes DESC
+    """
+    rows = q(sql, (station_id,))
+    return jsonify({"ok": True, "impact": rows})
+
+@app.get("/api/analytics/busiest-hours")
+def get_busiest_hours():
+    """
+    進階查詢：分析全市所有車站一天中各時段的平均佔用率。
+    佔用率 = 已被騎走的車 / 總容量，越高代表越多人在用。
+
+    回傳範例：
+      { "ok": true, "data": [
+          {"hour": 8, "avg_occupancy_pct": 72.3, "sample_size": 840},
+          {"hour": 17, "avg_occupancy_pct": 68.1, "sample_size": 820},
+          ...
+      ]}
+    """
+    sql = f"""
+        SELECT 
+            HOUR(last_update) AS hour,
+            ROUND(
+                AVG(
+                    CASE 
+                        WHEN (available_bikes + available_bike_stands) > 0
+                        THEN (1 - available_bikes / (available_bikes + available_bike_stands)) * 100
+                        ELSE NULL
+                    END
+                ), 1
+            ) AS avg_occupancy_pct,
+            COUNT(*) AS sample_size
+        FROM {TBL_AVAILABILITY}
+        WHERE last_update >= (UTC_TIMESTAMP() - INTERVAL 7 DAY)
+        GROUP BY hour
+        ORDER BY hour ASC
+    """
+    rows = q(sql, ())
+    return jsonify({"ok": True, "data": rows})
+
+
+# ==============================
+# Task 2 Bonus: User Login
+# ==============================
+
+@app.post("/api/auth/register")
+def register():
+    """
+    註冊新使用者。
+    Request JSON: { "username": "alice", "password": "mypassword123" }
+
+    密碼用 werkzeug generate_password_hash 雜湊後儲存，絕不存明文。
+    需要在 DB 建立 users 資料表（見下方 SQL）。
+    """
+    body     = request.get_json(silent=True) or {}
+    username = (body.get("username") or "").strip()
+    password = (body.get("password") or "").strip()
+
+    if not username or not password:
+        return jsonify({"ok": False, "error": "username and password are required"}), 400
+
+    if len(password) < 8:
+        return jsonify({"ok": False, "error": "password must be at least 8 characters"}), 400
+
+    existing = q(f"SELECT id FROM {TBL_USERS} WHERE username = %s LIMIT 1", (username,))
+    if existing:
+        return jsonify({"ok": False, "error": "username already taken"}), 409
+
+    hashed = generate_password_hash(password)
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                f"INSERT INTO {TBL_USERS} (username, password_hash, created_at) VALUES (%s, %s, %s)",
+                (username, hashed, utcnow_naive()),
+            )
+
+    return jsonify({"ok": True, "message": f"User '{username}' registered successfully"}), 201
+
+
+@app.post("/api/auth/login")
+def login():
+    """
+    登入。
+    Request JSON: { "username": "alice", "password": "mypassword123" }
+    成功後把 user_id / username 存入 Flask session（加密 cookie）。
+    """
+    body     = request.get_json(silent=True) or {}
+    username = (body.get("username") or "").strip()
+    password = (body.get("password") or "").strip()
+
+    if not username or not password:
+        return jsonify({"ok": False, "error": "username and password are required"}), 400
+
+    rows = q(f"SELECT id, password_hash FROM {TBL_USERS} WHERE username = %s LIMIT 1", (username,))
+    if not rows or not check_password_hash(rows[0]["password_hash"], password):
+        return jsonify({"ok": False, "error": "invalid username or password"}), 401
+
+    session["user_id"]  = rows[0]["id"]
+    session["username"] = username
+    return jsonify({"ok": True, "message": f"Welcome, {username}!"})
+
+
+@app.post("/api/auth/logout")
+def logout():
+    """登出，清除 session"""
+    session.clear()
+    return jsonify({"ok": True, "message": "Logged out"})
+
+
+@app.get("/api/auth/me")
+def me():
+    """檢查目前登入狀態，前端可以用這個判斷要不要顯示登入按鈕"""
+    if "user_id" not in session:
+        return jsonify({"ok": False, "logged_in": False}), 401
+    return jsonify({"ok": True, "logged_in": True, "username": session["username"]})
 
 
 # ==============================

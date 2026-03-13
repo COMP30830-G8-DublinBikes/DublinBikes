@@ -43,7 +43,7 @@ def fetch_and_store():
         
         print(f" Fetched {len(data)} bike stations from JCDecaux API")
         
-        # 3. 連接 Aiven MySQL
+        # 3. connect Aiven MySQL
         conn = pymysql.connect(
             host=db_host,
             port=db_port,

@@ -1,4 +1,4 @@
-# 遮蔽資料庫資訊檔案
+# ignore the file
 dbinfo.py
 config.php
 .env
