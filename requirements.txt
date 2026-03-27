@@ -1,4 +1,6 @@
+Flask
 requests
-pymysql
+PyMySQL
 cryptography
-sqlalchemy
+Werkzeug
+python-dotenv

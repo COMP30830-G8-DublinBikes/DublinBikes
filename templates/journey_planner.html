@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Journey Planner – BikeShare</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+  <style>
+    .planner-wrap {
+      max-width: 1000px;
+      margin: 40px auto;
+      padding: 0 20px;
+    }
+
+    .planner-card {
+      background: #fff;
+      border-radius: 24px;
+      padding: 24px;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+      margin-bottom: 20px;
+    }
+
+    .planner-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .planner-card input,
+    .planner-card select,
+    .planner-card button {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px solid #d1d5db;
+      font-size: 14px;
+    }
+
+    .planner-card button {
+      border: none;
+      cursor: pointer;
+      background: #1d4ed8;
+      color: #fff;
+      font-weight: 700;
+    }
+
+    .planner-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+    }
+
+    .planner-actions button {
+      width: auto;
+      min-width: 180px;
+    }
+
+    .result-box {
+      margin-top: 18px;
+      padding: 16px;
+      border-radius: 16px;
+      background: #f8fafc;
+      border: 1px solid #e5e7eb;
+      line-height: 1.7;
+    }
+
+    .muted {
+      color: #6b7280;
+    }
+
+    @media (max-width: 720px) {
+      .planner-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="planner-wrap">
+    <h1>Journey Planner</h1>
+    <p class="muted">Plan a cycling route and open directions directly in Google Maps.</p>
+
+    <section class="planner-card">
+      <div class="planner-grid">
+        <div>
+          <label>Destination</label>
+          <input id="destination" type="text" placeholder="e.g. Trinity College Dublin" />
+        </div>
+        <div>
+          <label>Preferred station</label>
+          <select id="stationSelect">
+            <option value="">Loading stations...</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="planner-actions">
+        <button id="useLocationBtn" type="button">Use My Current Location</button>
+        <button id="openRouteBtn" type="button">Open Route in Google Maps</button>
+      </div>
+
+      <div class="result-box" id="plannerResult">
+        Select a station and destination to plan your journey.
+      </div>
+    </section>
+  </div>
+
+  <script>
+    let userCoords = null;
+    let stations = [];
+
+    async function loadStations() {
+      try {
+        const res = await fetch("/api/bike/all");
+        const result = await res.json();
+        stations = result.rows || [];
+
+        const select = document.getElementById("stationSelect");
+        select.innerHTML = '<option value="">Choose a station...</option>';
+
+        stations.forEach((station) => {
+          const option = document.createElement("option");
+          option.value = station.station_id;
+          option.textContent = `${station.name} (${station.available_bikes ?? 0} bikes)`;
+          select.appendChild(option);
+        });
+      } catch (error) {
+        document.getElementById("plannerResult").textContent = "Failed to load station list.";
+      }
+    }
+
+    function getSelectedStation() {
+      const id = document.getElementById("stationSelect").value;
+      return stations.find((s) => String(s.station_id) === String(id));
+    }
+
+    document.getElementById("useLocationBtn").addEventListener("click", () => {
+      if (!navigator.geolocation) {
+        document.getElementById("plannerResult").textContent = "Geolocation is not supported in this browser.";
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          userCoords = {
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude
+          };
+          document.getElementById("plannerResult").textContent =
+            `Current location captured: ${userCoords.lat.toFixed(5)}, ${userCoords.lng.toFixed(5)}`;
+        },
+        () => {
+          document.getElementById("plannerResult").textContent = "Unable to get your current location.";
+        }
+      );
+    });
+
+    document.getElementById("openRouteBtn").addEventListener("click", () => {
+      const destinationText = document.getElementById("destination").value.trim();
+      const station = getSelectedStation();
+
+      if (!station) {
+        document.getElementById("plannerResult").textContent = "Please choose a station first.";
+        return;
+      }
+
+      if (!destinationText) {
+        document.getElementById("plannerResult").textContent = "Please enter a destination.";
+        return;
+      }
+
+      const origin = userCoords
+        ? `${userCoords.lat},${userCoords.lng}`
+        : `${station.latitude},${station.longitude}`;
+
+      const stationSummary = `${station.name} — ${station.available_bikes ?? 0} bikes, ${station.available_bike_stands ?? 0} docks available.`;
+
+      document.getElementById("plannerResult").innerHTML = `
+        <strong>Selected station:</strong> ${stationSummary}<br>
+        <strong>Destination:</strong> ${destinationText}<br>
+        Opening Google Maps cycling directions...
+      `;
+
+      const url = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destinationText)}&travelmode=bicycling`;
+      window.open(url, "_blank");
+    });
+
+    loadStations();
+  </script>
+</body>
+</html>

@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>BikeShare – Dublin Bikes Dashboard</title>
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}" />
+
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
+  />
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    .topbar {
+      flex-wrap: wrap;
+    }
+
+    .topbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .nav-link-btn,
+    .nav-solid-btn,
+    .small-btn,
+    .toggle-btn,
+    .ghost-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      padding: 10px 14px;
+      font-weight: 800;
+      text-decoration: none;
+      border: 1px solid #c7d2fe;
+      background: #fff;
+      color: #1d4ed8;
+      cursor: pointer;
+      transition: 0.2s ease;
+    }
+
+    .nav-solid-btn,
+    .small-btn.active {
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      color: #fff;
+      border: none;
+      box-shadow: 0 10px 24px rgba(37, 99, 235, 0.18);
+    }
+
+    .session-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border-radius: 999px;
+      padding: 10px 12px;
+      font-size: 14px;
+      font-weight: 800;
+      border: 1px solid #e5e7eb;
+      background: #fff;
+      color: #475569;
+    }
+
+    .session-pill.signed-in {
+      background: #ecfdf5;
+      color: #166534;
+      border-color: #bbf7d0;
+    }
+
+    .panel-title-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .map-meta {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
+    .map-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: #f8fafc;
+      border: 1px solid #e5e7eb;
+      color: #475569;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .station-actions,
+    .chart-toolbar {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+    }
+
+    .small-btn {
+      padding: 10px 12px;
+      font-size: 13px;
+    }
+
+    .ghost-btn {
+      border-color: #e5e7eb;
+      color: #475569;
+      background: #fff;
+    }
+
+    .assistant-box {
+      background: #f8fafc;
+      border: 1px solid #e5e7eb;
+      border-radius: 18px;
+      padding: 16px;
+      line-height: 1.8;
+      color: #334155;
+      min-height: 148px;
+      white-space: pre-line;
+    }
+
+    .assistant-meta {
+      margin-top: 12px;
+      color: #64748b;
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    .weather-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .weather-mini {
+      background: #f8fafc;
+      border: 1px solid #e5e7eb;
+      border-radius: 16px;
+      padding: 14px;
+    }
+
+    .weather-mini .label {
+      font-size: 13px;
+      color: #64748b;
+      margin-bottom: 6px;
+    }
+
+    .weather-mini .value {
+      font-size: 22px;
+      font-weight: 800;
+      color: #111827;
+    }
+
+    .chart-summary {
+      margin-top: 12px;
+      color: #64748b;
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    @media (max-width: 720px) {
+      .topbar-actions,
+      .weather-grid,
+      .chart-toolbar,
+      .station-actions {
+        width: 100%;
+      }
+
+      .weather-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .search {
+        order: 3;
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="topbar">
+      <div class="brand">
+        <div class="dot">🚲</div>
+        BikeShare
+      </div>
+
+      <div class="search">
+        <input id="stationSearchInput" placeholder="Search station name or address..." />
+      </div>
+
+      <div
+        class="weather-pill"
+        id="weather-pill"
+        title="View weather page"
+        onclick="window.location.href='/weather'"
+      >
+        <div class="badge">
+          <span id="wx-icon">☁️</span>
+          <span id="wx-temp">--°C</span>
+        </div>
+        <div class="muted" id="wx-pop">Live weather</div>
+      </div>
+
+      <div class="topbar-actions">
+        <div id="sessionPill" class="session-pill">Guest</div>
+        <a class="nav-link-btn" href="/">Home</a>
+        <a class="nav-link-btn" href="/journey-planner">Journey Planner</a>
+        <a class="nav-solid-btn" href="/sign-in">Account</a>
+      </div>
+    </div>
+
+    <section class="dashboard-hero">
+      <h1>Dublin Bikes Dashboard</h1>
+      <p>Explore live station status, current weather, journey support, AI riding advice and 48-hour bike trends across Dublin.</p>
+    </section>
+
+    <main class="dashboard-layout">
+      <section class="map-panel">
+        <div class="panel-title-row">
+          <div class="panel-title">
+            <h2>Station Map</h2>
+            <p>Click a marker to view real-time station details, smart advice and historical bike data.</p>
+            <div class="map-meta">
+              <span class="map-chip" id="stationCountChip">Stations: --</span>
+              <span class="map-chip" id="availableBikeChip">Available bikes: --</span>
+              <span class="map-chip" id="lastRefreshChip">Last refresh: --</span>
+            </div>
+          </div>
+        </div>
+
+        <div id="map"></div>
+
+        <div class="legend">
+          <span><i class="legend-dot green"></i> Good availability</span>
+          <span><i class="legend-dot orange"></i> Limited bikes</span>
+          <span><i class="legend-dot red"></i> Empty station</span>
+          <span><i class="legend-dot gray"></i> No data</span>
+        </div>
+      </section>
+
+      <aside class="sidebar">
+        <div class="card" id="station-card">
+          <h2>Station Details</h2>
+          <p>Select a station on the map.</p>
+        </div>
+
+        <div class="card" id="weather-card">
+          <h2>Current Weather</h2>
+          <p>Loading weather...</p>
+        </div>
+
+        <div class="card chart-card" id="trend-card">
+          <h2>48-Hour Bike Trend</h2>
+          <div class="chart-toolbar">
+            <button class="small-btn active" data-series="occupancy" type="button">Occupancy %</button>
+            <button class="small-btn" data-series="bikes" type="button">Avg bikes</button>
+            <button class="small-btn" data-series="stands" type="button">Avg docks</button>
+          </div>
+          <canvas id="historyChart"></canvas>
+          <div class="chart-summary" id="chartSummary">Select a station to view trend insight.</div>
+        </div>
+
+        <div class="card" id="assistant-card">
+          <h2>Ride Assistant</h2>
+          <div class="assistant-box" id="assistantAdvice">Select a station to get route and riding advice.</div>
+          <div class="assistant-meta" id="assistantMeta">The assistant uses the current station plus live weather and availability data.</div>
+          <div class="station-actions">
+            <button class="small-btn active" id="refreshAdviceBtn" type="button">Refresh advice</button>
+          </div>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""
+  ></script>
+
+  <script src="{{ url_for('static', filename='dashboard.js') }}"></script>
+</body>
+</html>
