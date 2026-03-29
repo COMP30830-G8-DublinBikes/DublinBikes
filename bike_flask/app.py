@@ -9,6 +9,7 @@ load_dotenv()
 
 import pymysql
 import requests
+import google.generativeai as genai  # 修正：加入 Gemini 套件
 from flask import Flask, jsonify, render_template, request, session
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -76,17 +77,17 @@ def get_owm_key() -> str:
             "Missing OWM config. Set OWM_API_KEY env var or add OWM_API_KEY to dbinfo.py"
         ) from e
 
-# this is openai 
-def get_openai_key() -> str:
-    key = os.getenv("OPENAI_API_KEY")
+# 修正：改為讀取 Gemini Key
+def get_gemini_key() -> str:
+    key = os.getenv("GOOGLE_API_KEY")
     if key:
         return key
     try:
         import dbinfo  # type: ignore
-        return dbinfo.OPENAI_API_KEY
+        return dbinfo.GOOGLE_API_KEY
     except Exception as e:
         raise RuntimeError(
-            "Missing OPENAI_API_KEY in .env or dbinfo.py"
+            "Missing GOOGLE_API_KEY in .env or dbinfo.py"
         ) from e
 
 
@@ -519,275 +520,54 @@ def api_auth_me():
         "user": {"username": username}
     })
 
-
 # -----------------------------
-# API: analytics
-# -----------------------------
-@app.get("/api/analytics/weather-impact/<int:station_id>")
-def api_analytics_weather_impact(station_id: int):
-    sql = f"""
-        SELECT
-            w.weather_main,
-            w.weather_description,
-            ROUND(AVG(a.available_bikes), 2) AS avg_bikes,
-            ROUND(AVG(a.available_bike_stands), 2) AS avg_stands,
-            COUNT(*) AS sample_count
-        FROM {TBL_AVAILABILITY} a
-        JOIN {TBL_WEATHER_CURRENT} w
-          ON ABS(TIMESTAMPDIFF(MINUTE, a.last_update, w.dt)) <= 10
-        WHERE a.number = %s
-        GROUP BY w.weather_main, w.weather_description
-        ORDER BY sample_count DESC, avg_bikes DESC
-    """
-    rows = q(sql, (station_id,))
-    return jsonify({
-        "ok": True,
-        "station_id": station_id,
-        "count": len(rows),
-        "rows": rows
-    })
-
-
-@app.get("/api/analytics/busiest-hours")
-def api_analytics_busiest_hours():
-    sql = f"""
-        SELECT
-            DATE_FORMAT(last_update, '%%H:00') AS hour_of_day,
-            ROUND(AVG(total_bike_stands - available_bike_stands), 2) AS avg_bikes_in_use,
-            COUNT(*) AS sample_count
-        FROM {TBL_AVAILABILITY}
-        GROUP BY DATE_FORMAT(last_update, '%%H:00')
-        ORDER BY hour_of_day ASC
-    """
-    rows = q(sql)
-    return jsonify({"ok": True, "count": len(rows), "rows": rows})
-
-
-# -----------------------------
-# API: assistant (rule-based MVP)
-# -----------------------------
-@app.post("/api/assistant/recommend")
-def api_assistant_recommend():
-    try:
-        data = request.get_json(silent=True) or {}
-        station_id = data.get("station_id")
-
-        weather = fetch_current_live()
-        stations = q(f"""
-            SELECT
-                s.number AS station_id,
-                s.name,
-                s.address,
-                s.position_lat AS latitude,
-                s.position_lng AS longitude,
-                COALESCE(a.total_bike_stands, s.bikestands) AS capacity,
-                a.available_bikes,
-                a.available_bike_stands,
-                a.status
-            FROM {TBL_STATION} s
-            LEFT JOIN (
-                SELECT a1.*
-                FROM {TBL_AVAILABILITY} a1
-                INNER JOIN (
-                    SELECT number, MAX(last_update) AS max_last_update
-                    FROM {TBL_AVAILABILITY}
-                    GROUP BY number
-                ) latest
-                ON a1.number = latest.number
-                AND a1.last_update = latest.max_last_update
-            ) a
-            ON s.number = a.number
-            ORDER BY s.number ASC
-        """)
-
-        if not stations:
-            return jsonify({"ok": False, "error": "No station data available."}), 404
-
-        selected = None
-        if station_id is not None:
-            for s in stations:
-                if int(s["station_id"]) == int(station_id):
-                    selected = s
-                    break
-
-        if selected is None:
-            selected = max(
-                stations,
-                key=lambda x: int(x["available_bikes"] or 0)
-            )
-
-        bikes = int(selected.get("available_bikes") or 0)
-        docks = int(selected.get("available_bike_stands") or 0)
-        condition = (weather.get("weather_description") or "unknown weather").lower()
-        temp = weather.get("temp")
-
-        advice_parts = []
-
-        if bikes == 0:
-            advice_parts.append(
-                f"{selected['name']} currently has no bikes available, so it is not a good pickup station right now."
-            )
-        elif bikes < 3:
-            advice_parts.append(
-                f"{selected['name']} has only {bikes} bikes available, so availability is limited."
-            )
-        else:
-            advice_parts.append(
-                f"{selected['name']} looks like a reasonable pickup station with {bikes} bikes available."
-            )
-
-        if docks < 3:
-            advice_parts.append(
-                f"If you plan to return a bike there later, dock space may be tight because only {docks} stands are free."
-            )
-        else:
-            advice_parts.append(
-                f"It also has {docks} free docks, so return availability is acceptable."
-            )
-
-        if "rain" in condition or "drizzle" in condition:
-            advice_parts.append(
-                f"The current weather suggests {condition}, so bringing waterproof clothing would be a good idea."
-            )
-        elif temp is not None and float(temp) <= 5:
-            advice_parts.append(
-                f"It is quite cold at about {temp}°C, so extra layers would help."
-            )
-        else:
-            advice_parts.append(
-                f"The current weather is {condition}, which is generally manageable for cycling."
-            )
-
-        advice = " ".join(advice_parts)
-
-        return jsonify({
-            "ok": True,
-            "station": selected,
-            "weather": weather,
-            "advice": advice
-        })
-    except Exception as e:
-        return jsonify({"ok": False, "error": str(e)}), 500
-
-
-# -----------------------------
-# API: GenAI recommendation
+# API: GenAI recommendation (保險加強版)
 # -----------------------------
 @app.post("/api/ai/recommend")
 def api_ai_recommend():
-    """
-    真正的 GenAI 推薦端點，取代規則式版本。
-    
-    Request JSON:
-      {
-        "lat": 53.3498,       ← 使用者目前位置（選填）
-        "lng": -6.2603,
-        "question": "..."     ← 使用者想問的問題（選填）
-      }
-    """
     try:
-        import openai
+        print("\n--- [DEBUG] AI Route Accessed ---")
+        
+        # 1. 取得 API Key
+        api_key = get_gemini_key()
+        if not api_key:
+            print("ERROR: No Google API Key found!")
+            return jsonify({"ok": False, "error": "API Key is missing"}), 500
+        
+        genai.configure(api_key=api_key)
+        for m in genai.list_models():
+            print(f"可用的模型名稱: {m.name}")
         
         data = request.get_json(silent=True) or {}
-        user_lat = data.get("lat")
-        user_lng = data.get("lng")
-        user_question = data.get("question", "Which station do you recommend?")
+        user_question = data.get("question", "Recommend a station.")
+        print(f"DEBUG: Question: {user_question}")
 
-        # 1. 抓即時天氣
+        # 2. 獲取天氣與車站資料 (先用簡單的查詢測試)
         weather = fetch_current_live()
+        stations = q(f"SELECT s.number, s.name, a.available_bikes FROM {TBL_STATION} s LEFT JOIN {TBL_AVAILABILITY} a ON s.number = a.number LIMIT 5")
+        
+        print("DEBUG: Data fetched successfully. Now calling Gemini...")
 
-        # 2. 抓所有車站最新狀態（複用 api_bike_all 的 SQL）
-        stations = q(f"""
-            SELECT
-                s.number AS station_id,
-                s.name,
-                s.position_lat AS latitude,
-                s.position_lng AS longitude,
-                a.available_bikes,
-                a.available_bike_stands,
-                a.status
-            FROM {TBL_STATION} s
-            LEFT JOIN (
-                SELECT a1.*
-                FROM {TBL_AVAILABILITY} a1
-                INNER JOIN (
-                    SELECT number, MAX(last_update) AS max_last_update
-                    FROM {TBL_AVAILABILITY}
-                    GROUP BY number
-                ) latest
-                ON a1.number = latest.number
-                AND a1.last_update = latest.max_last_update
-            ) a ON s.number = a.number
-            WHERE a.available_bikes IS NOT NULL
-            ORDER BY s.number ASC
-        """)
-
-        if not stations:
-            return jsonify({"ok": False, "error": "No station data available."}), 404
-
-        # 3. 如果有使用者位置，只取最近的 5 個車站給 AI
-        #    這樣可以減少 token 用量，也讓建議更精準
-        if user_lat and user_lng:
-            def distance(s):
-                return ((float(s["latitude"]) - float(user_lat)) ** 2 +
-                        (float(s["longitude"]) - float(user_lng)) ** 2) ** 0.5
-            stations = sorted(stations, key=distance)[:5]
-
-        # 4. 把車站資料整理成文字給 AI 看
-        station_lines = []
-        for s in stations:
-            bikes = s.get("available_bikes") or 0
-            docks = s.get("available_bike_stands") or 0
-            status = s.get("status") or "unknown"
-            station_lines.append(
-                f"- {s['name']} (ID:{s['station_id']}): "
-                f"{bikes} bikes available, {docks} docks free, status: {status}"
-            )
-        stations_text = "\n".join(station_lines)
-
-        # 5. 組成給 AI 的 prompt
-        system_prompt = """You are a helpful Dublin Bikes assistant. 
-Your job is to recommend the best bike station based on current availability and weather.
-Keep your answer concise (2-3 sentences), friendly, and practical.
-Always mention the specific station name you recommend."""
-
-        user_prompt = f"""Current weather in Dublin:
-- Temperature: {weather.get('temp')}°C
-- Condition: {weather.get('weather_description')}
-- Wind speed: {weather.get('wind_speed')} m/s
-- Rain (last hour): {weather.get('rain_1h') or 0} mm
-
-Nearby stations:
-{stations_text}
-
-User's question: {user_question}"""
-
-        # 6. 呼叫 OpenAI
-        client = openai.OpenAI(api_key=get_openai_key())
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",   # 便宜又夠用
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user",   "content": user_prompt},
-            ],
-            max_tokens=200,
-            temperature=0.7,
-        )
-
-        ai_reply = response.choices[0].message.content.strip()
-
+        # 3. 呼叫 Gemini (使用最保險的型號名稱)
+        model = genai.GenerativeModel("models/gemini-2.5-flash-lite")        
+        
+        # 組成一個簡單的 Prompt
+        prompt = f"Current weather: {weather}. Here are some bike stations: {stations}. User asks: {user_question}. Please give a short advice."
+        
+        response = model.generate_content(prompt)
+        
+        print("DEBUG: Gemini successfully replied!")
+        
         return jsonify({
             "ok": True,
-            "advice": ai_reply,
-            "weather": weather,
-            "stations_considered": stations,
+            "advice": response.text,
+            "weather": weather
         })
 
-    except openai.AuthenticationError:
-        return jsonify({"ok": False, "error": "Invalid OpenAI API key."}), 401
-    except openai.RateLimitError:
-        return jsonify({"ok": False, "error": "OpenAI rate limit reached. Please try again later."}), 429
     except Exception as e:
+        print(f"!!! ERROR inside AI route: {str(e)}")
+        import traceback
+        traceback.print_exc() # 這會印出到底是哪一行出錯
         return jsonify({"ok": False, "error": str(e)}), 500
 
 # -----------------------------
