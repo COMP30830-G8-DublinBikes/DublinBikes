@@ -3,88 +3,874 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>BikeShare – Dublin Bikes</title>
-  <link rel="stylesheet" href="/static/styles.css" />
+  <title>G8BikeShare – Dublin Bike Finder</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+  <style>
+    .home-page {
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at top right, rgba(59, 130, 246, 0.10), transparent 28%),
+        radial-gradient(circle at left center, rgba(37, 99, 235, 0.08), transparent 22%),
+        #f5f7fb;
+      color: #1f2937;
+    }
+
+    .home-shell {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 24px 20px 56px;
+    }
+
+    .home-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      background: rgba(255, 255, 255, 0.95);
+      border: 1px solid #e5e7eb;
+      border-radius: 24px;
+      padding: 16px 20px;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+      position: sticky;
+      top: 16px;
+      z-index: 20;
+      backdrop-filter: blur(10px);
+      flex-wrap: wrap;
+    }
+
+    .home-brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 14px;
+      text-decoration: none;
+      color: #0f172a;
+      min-width: fit-content;
+    }
+
+    .home-brand-mark {
+      width: 54px;
+      height: 54px;
+      display: grid;
+      place-items: center;
+      border-radius: 16px;
+      box-shadow: 0 12px 28px rgba(37, 99, 235, 0.18);
+      flex-shrink: 0;
+    }
+
+    .home-brand-mark svg {
+      width: 54px;
+      height: 54px;
+      display: block;
+    }
+
+    .home-brand-text {
+      display: flex;
+      flex-direction: column;
+      line-height: 1;
+    }
+
+    .home-brand-title {
+      font-size: 2rem;
+      font-weight: 900;
+      letter-spacing: -0.04em;
+      color: #0f172a;
+    }
+
+    .home-brand-accent {
+      color: #2563eb;
+    }
+
+    .home-brand-subtitle {
+      margin-top: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #64748b;
+      letter-spacing: 0.02em;
+    }
+
+    .home-links {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .home-links a {
+      text-decoration: none;
+      color: #475569;
+      font-weight: 700;
+      padding: 10px 14px;
+      border-radius: 999px;
+      transition: 0.2s ease;
+    }
+
+    .home-links a:hover {
+      background: #eef2ff;
+      color: #1d4ed8;
+    }
+
+    .home-nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .home-btn,
+    .home-btn-outline {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      border-radius: 999px;
+      padding: 12px 18px;
+      font-weight: 800;
+      text-decoration: none;
+      transition: 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .home-btn {
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      color: #fff;
+      border: none;
+      box-shadow: 0 10px 24px rgba(37, 99, 235, 0.25);
+    }
+
+    .home-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 14px 28px rgba(37, 99, 235, 0.30);
+    }
+
+    .home-btn-outline {
+      background: #fff;
+      color: #1d4ed8;
+      border: 1px solid #c7d2fe;
+    }
+
+    .home-btn-outline:hover {
+      background: #eef2ff;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1.2fr 0.9fr;
+      gap: 28px;
+      align-items: stretch;
+      margin-top: 28px;
+    }
+
+    .hero-copy,
+    .hero-panel,
+    .stats-panel,
+    .feature-card,
+    .steps-card,
+    .cta-banner {
+      background: rgba(255, 255, 255, 0.96);
+      border: 1px solid #e5e7eb;
+      border-radius: 28px;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+    }
+
+    .hero-copy {
+      padding: 36px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #e0e7ff;
+      color: #1d4ed8;
+      border-radius: 999px;
+      padding: 8px 14px;
+      font-size: 13px;
+      font-weight: 800;
+      margin-bottom: 16px;
+    }
+
+    .hero-copy h1 {
+      font-size: clamp(38px, 6vw, 68px);
+      line-height: 1.02;
+      letter-spacing: -0.03em;
+      margin: 0 0 16px;
+      color: #111827;
+    }
+
+    .hero-copy p {
+      font-size: 18px;
+      line-height: 1.7;
+      color: #64748b;
+      margin: 0 0 24px;
+      max-width: 700px;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-bottom: 22px;
+    }
+
+    .hero-highlights {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 20px;
+    }
+
+    .hero-highlight {
+      background: #f8fafc;
+      border: 1px solid #e5e7eb;
+      border-radius: 18px;
+      padding: 16px;
+    }
+
+    .hero-highlight strong {
+      display: block;
+      font-size: 22px;
+      color: #111827;
+      margin-bottom: 6px;
+    }
+
+    .hero-highlight span {
+      color: #64748b;
+      font-size: 14px;
+    }
+
+    .hero-panel {
+      padding: 26px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      justify-content: space-between;
+    }
+
+    .hero-panel-top h2 {
+      margin: 0 0 10px;
+      font-size: 28px;
+      color: #111827;
+    }
+
+    .hero-panel-top p {
+      margin: 0;
+      color: #64748b;
+      line-height: 1.7;
+    }
+
+    .mini-status-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .mini-status-card {
+      background: #f8fafc;
+      border: 1px solid #e5e7eb;
+      border-radius: 20px;
+      padding: 18px;
+    }
+
+    .mini-status-card .label {
+      font-size: 13px;
+      color: #64748b;
+      margin-bottom: 10px;
+      font-weight: 700;
+    }
+
+    .mini-status-card .value {
+      font-size: 30px;
+      font-weight: 900;
+      color: #111827;
+    }
+
+    .mini-status-card .sub {
+      margin-top: 6px;
+      color: #64748b;
+      font-size: 14px;
+    }
+
+    .weather-summary {
+      background: linear-gradient(135deg, #eff6ff, #eef2ff);
+      border: 1px solid #dbeafe;
+      border-radius: 22px;
+      padding: 18px;
+    }
+
+    .weather-summary .title {
+      font-size: 13px;
+      color: #475569;
+      margin-bottom: 10px;
+      font-weight: 700;
+    }
+
+    .weather-summary .main {
+      font-size: 34px;
+      font-weight: 900;
+      color: #111827;
+    }
+
+    .weather-summary .desc {
+      margin-top: 8px;
+      color: #64748b;
+      line-height: 1.6;
+    }
+
+    .section {
+      margin-top: 28px;
+    }
+
+    .section-head {
+      margin-bottom: 18px;
+    }
+
+    .section-head h2 {
+      margin: 0 0 8px;
+      font-size: 34px;
+      color: #111827;
+    }
+
+    .section-head p {
+      margin: 0;
+      color: #64748b;
+      line-height: 1.7;
+    }
+
+    .stats-panel {
+      padding: 26px;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .stat-card {
+      background: #f8fafc;
+      border: 1px solid #e5e7eb;
+      border-radius: 22px;
+      padding: 20px;
+    }
+
+    .stat-card .stat-label {
+      color: #64748b;
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+
+    .stat-card .stat-value {
+      font-size: 34px;
+      font-weight: 900;
+      color: #111827;
+      margin-bottom: 6px;
+    }
+
+    .stat-card .stat-note {
+      color: #64748b;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .feature-card {
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .feature-icon {
+      width: 52px;
+      height: 52px;
+      border-radius: 18px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(180deg, #eff6ff, #e0e7ff);
+      font-size: 24px;
+    }
+
+    .feature-card h3 {
+      margin: 0;
+      font-size: 22px;
+      color: #111827;
+    }
+
+    .feature-card p {
+      margin: 0;
+      color: #64748b;
+      line-height: 1.7;
+      flex: 1;
+    }
+
+    .feature-card a {
+      color: #1d4ed8;
+      font-weight: 800;
+      text-decoration: none;
+    }
+
+    .steps-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .steps-card {
+      padding: 24px;
+    }
+
+    .step-number {
+      width: 42px;
+      height: 42px;
+      border-radius: 999px;
+      display: grid;
+      place-items: center;
+      background: #dbeafe;
+      color: #1d4ed8;
+      font-weight: 900;
+      margin-bottom: 14px;
+    }
+
+    .steps-card h3 {
+      margin: 0 0 10px;
+      font-size: 22px;
+      color: #111827;
+    }
+
+    .steps-card p {
+      margin: 0;
+      color: #64748b;
+      line-height: 1.7;
+    }
+
+    .cta-banner {
+      margin-top: 28px;
+      padding: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      flex-wrap: wrap;
+    }
+
+    .cta-banner h2 {
+      margin: 0 0 8px;
+      font-size: 30px;
+      color: #111827;
+    }
+
+    .cta-banner p {
+      margin: 0;
+      color: #64748b;
+      line-height: 1.7;
+    }
+
+    .footer {
+      margin-top: 28px;
+      color: #64748b;
+      font-size: 14px;
+      text-align: center;
+    }
+
+    .status-ok {
+      color: #16a34a;
+      font-weight: 800;
+    }
+
+    .status-muted {
+      color: #64748b;
+      font-weight: 700;
+    }
+
+    @media (max-width: 1080px) {
+      .hero,
+      .features-grid,
+      .stats-grid,
+      .steps-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .hero {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .home-nav {
+        padding: 14px;
+      }
+
+      .home-links {
+        display: none;
+      }
+
+      .hero-copy,
+      .hero-panel,
+      .stats-panel,
+      .feature-card,
+      .steps-card,
+      .cta-banner {
+        border-radius: 22px;
+      }
+
+      .hero-highlights,
+      .features-grid,
+      .stats-grid,
+      .steps-grid,
+      .mini-status-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-copy {
+        padding: 24px;
+      }
+
+      .hero-panel {
+        padding: 20px;
+      }
+
+      .home-brand-mark,
+      .home-brand-mark svg {
+        width: 46px;
+        height: 46px;
+      }
+
+      .home-brand-title {
+        font-size: 1.6rem;
+      }
+
+      .home-brand-subtitle {
+        font-size: 11px;
+      }
+    }
+  </style>
 </head>
 <body>
-  <div class="container">
-    <div class="topbar">
-      <div class="brand">
-        <div class="dot">🚲</div>
-        BikeShare
-      </div>
+  <div class="home-page">
+    <div class="home-shell">
+      <nav class="home-nav">
+        <a class="home-brand" href="{{ url_for('home') }}" aria-label="G8BikeShare Home">
+          <div class="home-brand-mark">
+            <svg viewBox="0 0 64 64" aria-hidden="true">
+              <defs>
+                <linearGradient id="g8homegrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#60a5fa"></stop>
+                  <stop offset="100%" stop-color="#1d4ed8"></stop>
+                </linearGradient>
+              </defs>
+              <rect x="4" y="4" width="56" height="56" rx="16" fill="url(#g8homegrad)"></rect>
+              <circle cx="21" cy="42" r="8" fill="none" stroke="white" stroke-width="3"></circle>
+              <circle cx="43" cy="42" r="8" fill="none" stroke="white" stroke-width="3"></circle>
+              <path d="M21 42 L28 27 L35 42 L43 42" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>
+              <path d="M28 27 H37" fill="none" stroke="white" stroke-width="3" stroke-linecap="round"></path>
+              <path d="M31 20 C25 20,25 29,31 29 C37 29,37 20,31 20 Z" fill="none" stroke="white" stroke-width="2.4"></path>
+              <path d="M39 20 C33 20,33 29,39 29 C45 29,45 20,39 20 Z" fill="none" stroke="white" stroke-width="2.4"></path>
+            </svg>
+          </div>
+          <div class="home-brand-text">
+            <span class="home-brand-title"><span class="home-brand-accent">G8</span>BikeShare</span>
+            <span class="home-brand-subtitle">Smart Dublin Bike Companion</span>
+          </div>
+        </a>
 
-      <div class="search">
-        <input placeholder="Search station name or address..." />
-      </div>
-
-      <!-- clickable weather bar -->
-      <div class="weather-pill" id="weather-pill" title="Click to see forecast">
-        <div class="badge">
-          <span id="wx-icon">☁️</span>
-          <span id="wx-temp">--°C</span>
+        <div class="home-links">
+          <a href="{{ url_for('home') }}">Home</a>
+          <a href="{{ url_for('dashboard') }}">Dashboard</a>
+          <a href="{{ url_for('journey_planner') }}">Journey Planner</a>
+          <a href="{{ url_for('weather_page') }}">Weather</a>
+          <a href="{{ url_for('about') }}">About</a>
+          <a href="{{ url_for('sign_in') }}">Account</a>
         </div>
-        <div class="muted" id="wx-pop">--% rain</div>
-      </div>
-    </div>
 
-    <div class="main">
-      <!-- Legend (left bottom) -->
-      <div class="legend">
-        <h3>Legend</h3>
-        <div class="item"><span class="dotc green">5+</span> High Availability (50%+ bikes)</div>
-        <div class="item"><span class="dotc orange">≈</span> Medium Availability (10–50%)</div>
-        <div class="item"><span class="dotc red">!</span> Low Availability (&lt;10%)</div>
-        <hr />
-        <div class="item"><span class="dotc yellow">★</span> Points of Interest</div>
-      </div>
-
-      <!-- Right panel (mockup style placeholder) -->
-      <div class="panel">
-        <div class="head">
-          Historic Quarter Stop
-          <span style="opacity:.85;font-size:14px;">♡ ✕</span>
+        <div class="home-nav-actions">
+          <a class="home-btn-outline" href="{{ url_for('journey_planner') }}">Plan a journey</a>
+          <a class="home-btn" href="{{ url_for('dashboard') }}">Open dashboard</a>
         </div>
-        <div class="body">
-          <div class="bar">
-            <strong>High Availability</strong>
-            <span><strong>90%</strong> available</span>
+      </nav>
+
+      <section class="hero">
+        <div class="hero-copy">
+          <div class="eyebrow">Live city mobility • Dublin bike companion</div>
+          <h1>Find a bike, plan a route, and ride smarter in Dublin.</h1>
+          <p>
+            G8BikeShare helps users check real-time station availability, explore bike trends,
+            review current weather, and open cycling directions in seconds.
+          </p>
+
+          <div class="hero-actions">
+            <a class="home-btn" href="{{ url_for('dashboard') }}">View live dashboard</a>
+            <a class="home-btn-outline" href="{{ url_for('journey_planner') }}">Start journey planner</a>
+            <a class="home-btn-outline" href="{{ url_for('sign_in') }}">Account</a>
           </div>
 
-          <div class="cards">
-            <div class="card">
-              <div class="small">Bikes Available</div>
-              <div class="big" id="bikesAvailable">--</div>
+          <div class="hero-highlights">
+            <div class="hero-highlight">
+              <strong id="heroStations">--</strong>
+              <span>stations tracked</span>
             </div>
-            <div class="card">
-              <div class="small">Docks Available</div>
-              <div class="big" id="docksAvailable">--</div>
+            <div class="hero-highlight">
+              <strong id="heroBikes">--</strong>
+              <span>bikes available now</span>
+            </div>
+            <div class="hero-highlight">
+              <strong id="heroWeather">--</strong>
+              <span>current weather</span>
+            </div>
+          </div>
+        </div>
+
+        <aside class="hero-panel">
+          <div class="hero-panel-top">
+            <h2>What you can do here</h2>
+            <p>
+              Use the dashboard to inspect live station markers, compare bike availability,
+              review historical trends, and move directly into route planning.
+            </p>
+          </div>
+
+          <div class="mini-status-grid">
+            <div class="mini-status-card">
+              <div class="label">Availability status</div>
+              <div class="value" id="miniOpen">--</div>
+              <div class="sub">stations currently open</div>
+            </div>
+
+            <div class="mini-status-card">
+              <div class="label">AI support</div>
+              <div class="value">Live</div>
+              <div class="sub">rule-based and Gemini-powered assistance</div>
             </div>
           </div>
 
-          <div class="small" style="text-align:center;margin-bottom:14px;">Total Capacity: 20 bikes</div>
-          <button class="btn">Navigate with Google Maps</button>
-          <div class="small" style="text-align:center;margin-top:8px;">Opens directions in a new tab</div>
+          <div class="weather-summary">
+            <div class="title">Current weather snapshot</div>
+            <div class="main" id="weatherSummaryTemp">--°C</div>
+            <div class="desc" id="weatherSummaryDesc">
+              Weather information will appear here after the live weather API is available.
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <h2>Live city snapshot</h2>
+          <p>These numbers are loaded from the current bike and weather APIs.</p>
         </div>
+
+        <div class="stats-panel">
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-label">Stations in database</div>
+              <div class="stat-value" id="statStations">--</div>
+              <div class="stat-note">Count of station records returned by the API.</div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-label">Open stations</div>
+              <div class="stat-value" id="statOpenStations">--</div>
+              <div class="stat-note">Stations currently marked as open.</div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-label">Available bikes</div>
+              <div class="stat-value" id="statAvailableBikes">--</div>
+              <div class="stat-note">Total bikes currently available across returned stations.</div>
+            </div>
+
+            <div class="stat-card">
+              <div class="stat-label">Login status</div>
+              <div class="stat-value" id="statAuth">--</div>
+              <div class="stat-note" id="statAuthNote">Checking current session state.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <h2>Core features</h2>
+          <p>These modules show the main value of the G8BikeShare platform.</p>
+        </div>
+
+        <div class="features-grid">
+          <article class="feature-card">
+            <div class="feature-icon">🗺️</div>
+            <h3>Live dashboard</h3>
+            <p>Inspect station markers, station details, dock availability, and bike trends across Dublin.</p>
+            <a href="{{ url_for('dashboard') }}">Go to dashboard →</a>
+          </article>
+
+          <article class="feature-card">
+            <div class="feature-icon">🧭</div>
+            <h3>Journey planner</h3>
+            <p>Pick a preferred station, add a destination, and open cycling directions directly in Google Maps.</p>
+            <a href="{{ url_for('journey_planner') }}">Plan a journey →</a>
+          </article>
+
+          <article class="feature-card">
+            <div class="feature-icon">🌤️</div>
+            <h3>Weather-aware riding</h3>
+            <p>Review the live weather and forecast before choosing whether to ride and what to bring.</p>
+            <a href="{{ url_for('weather_page') }}">View weather →</a>
+          </article>
+
+          <article class="feature-card">
+            <div class="feature-icon">✨</div>
+            <h3>AI Bike Assistant</h3>
+            <p>Use rule-based advice and AI chat to ask natural-language questions about borrowing, returning, and ride conditions.</p>
+            <a href="{{ url_for('dashboard') }}">Open AI-ready dashboard →</a>
+          </article>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <h2>How it works</h2>
+          <p>A simple flow for users who just want to get moving quickly.</p>
+        </div>
+
+        <div class="steps-grid">
+          <article class="steps-card">
+            <div class="step-number">1</div>
+            <h3>Check live availability</h3>
+            <p>Search for a station or browse the dashboard to see where bikes and docks are available right now.</p>
+          </article>
+
+          <article class="steps-card">
+            <div class="step-number">2</div>
+            <h3>Review conditions</h3>
+            <p>Look at weather and station capacity to avoid empty stations, full docks, or poor riding conditions.</p>
+          </article>
+
+          <article class="steps-card">
+            <div class="step-number">3</div>
+            <h3>Open your route</h3>
+            <p>Launch cycling directions and start your journey with less friction and better information.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="cta-banner">
+        <div>
+          <h2>Ready to explore Dublin Bikes in real time?</h2>
+          <p>Open the dashboard for live markers, historical charts, and AI-guided riding advice.</p>
+        </div>
+        <div class="home-nav-actions">
+          <a class="home-btn-outline" href="{{ url_for('journey_planner') }}">Journey planner</a>
+          <a class="home-btn" href="{{ url_for('dashboard') }}">Launch dashboard</a>
+        </div>
+      </section>
+
+      <div class="footer">
+        G8BikeShare • UCD Software Engineering Project • Dublin bike availability, weather and journey planning
       </div>
     </div>
   </div>
 
-  <!-- Weather drawer -->
-  <div class="drawer-backdrop" id="drawer-backdrop"></div>
-  <aside class="drawer" id="drawer">
-    <div class="dhead">
-      <h2>Weather forecast</h2>
-      <button id="drawer-close">Close</button>
-    </div>
-    <div class="content">
-      <div class="small">Current</div>
-      <pre id="drawer-current" style="white-space:pre-wrap; margin:10px 0 14px 0;">Loading...</pre>
-      <div class="small">Next 7 days</div>
-      <div class="forecast-grid" id="drawer-forecast">Loading...</div>
-    </div>
-  </aside>
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      await Promise.all([
+        loadBikeStats(),
+        loadWeatherSummary(),
+        loadAuthStatus()
+      ]);
+    });
 
-  <script src="/static/app.js"></script>
+    async function loadBikeStats() {
+      try {
+        const response = await fetch("/api/bike/all");
+        const result = await response.json();
+        const rows = result.rows || [];
+
+        const totalStations = rows.length;
+        const openStations = rows.filter(row => String(row.status || "").toUpperCase() === "OPEN").length;
+        const totalBikes = rows.reduce((sum, row) => sum + Number(row.available_bikes || 0), 0);
+
+        setText("heroStations", totalStations);
+        setText("heroBikes", totalBikes);
+        setText("miniOpen", openStations);
+        setText("statStations", totalStations);
+        setText("statOpenStations", openStations);
+        setText("statAvailableBikes", totalBikes);
+      } catch (error) {
+        console.error("Failed to load bike stats:", error);
+        setText("heroStations", "N/A");
+        setText("heroBikes", "N/A");
+        setText("miniOpen", "N/A");
+        setText("statStations", "N/A");
+        setText("statOpenStations", "N/A");
+        setText("statAvailableBikes", "N/A");
+      }
+    }
+
+    async function loadWeatherSummary() {
+      try {
+        const response = await fetch("/api/weather/current");
+        const result = await response.json();
+
+        if (!result.ok || !result.data) {
+          setText("heroWeather", "Unavailable");
+          setText("weatherSummaryTemp", "--°C");
+          setText("weatherSummaryDesc", "Live weather is currently unavailable. Add the OpenWeather API key to enable this panel.");
+          return;
+        }
+
+        const weather = result.data;
+        const temp = weather.temp == null ? "--" : `${weather.temp}°C`;
+        const desc = weather.weather_description || weather.weather_main || "Weather available";
+
+        setText("heroWeather", desc);
+        setText("weatherSummaryTemp", temp);
+        setText(
+          "weatherSummaryDesc",
+          `Current condition: ${desc}. Humidity: ${safeValue(weather.humidity)}%. Wind: ${safeValue(weather.wind_speed)} m/s.`
+        );
+      } catch (error) {
+        console.error("Failed to load weather summary:", error);
+        setText("heroWeather", "Unavailable");
+        setText("weatherSummaryTemp", "--°C");
+        setText("weatherSummaryDesc", "Weather data could not be loaded.");
+      }
+    }
+
+    async function loadAuthStatus() {
+      try {
+        const response = await fetch("/api/auth/me");
+        const result = await response.json();
+
+        const statAuthEl = document.getElementById("statAuth");
+
+        if (result.authenticated && result.user) {
+          setText("statAuth", "Signed in");
+          setText("statAuthNote", `Current user: ${result.user.username}`);
+          if (statAuthEl) statAuthEl.className = "status-ok";
+        } else {
+          setText("statAuth", "Guest");
+          setText("statAuthNote", "No active login session right now.");
+          if (statAuthEl) statAuthEl.className = "status-muted";
+        }
+      } catch (error) {
+        console.error("Failed to load auth status:", error);
+        setText("statAuth", "Unknown");
+        setText("statAuthNote", "Could not read current session state.");
+      }
+    }
+
+    function setText(id, value) {
+      const el = document.getElementById(id);
+      if (el) el.textContent = value;
+    }
+
+    function safeValue(value) {
+      return value == null || value === "" ? "N/A" : value;
+    }
+  </script>
 </body>
 </html>
