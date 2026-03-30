@@ -1,14 +1,17 @@
 from __future__ import annotations
 
 import os
+import re
 import datetime as dt
 from typing import Any, Dict, List, Optional
 
 from dotenv import load_dotenv
+
 load_dotenv()
 
 import pymysql
 import requests
+import google.generativeai as genai
 from flask import Flask, jsonify, render_template, request, session
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -18,6 +21,11 @@ from werkzeug.security import generate_password_hash, check_password_hash
 # -----------------------------
 app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "dev-secret-key-change-in-production")
+
+app.config.update(
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE="Lax",
+)
 
 
 # -----------------------------
@@ -45,6 +53,14 @@ def dt_to_iso(value: Any) -> Any:
     if isinstance(value, (dt.datetime, dt.date, dt.time)):
         return value.isoformat()
     return value
+
+
+def normalize_text(value: Any) -> str:
+    if value is None:
+        return ""
+    text = str(value).strip().lower()
+    text = re.sub(r"[^a-z0-9]+", " ", text)
+    return " ".join(text.split())
 
 
 def get_jc_cfg() -> tuple[str, str]:
@@ -143,6 +159,139 @@ def http_get_json(url: str, params: Dict[str, Any]) -> Any:
     response = requests.get(url, params=params, timeout=20)
     response.raise_for_status()
     return response.json()
+
+
+def get_google_maps_key() -> str:
+    key = os.getenv("GOOGLE_MAPS_API_KEY")
+    if key:
+        return key
+
+    try:
+        import dbinfo  # type: ignore
+        return dbinfo.GOOGLE_MAPS_API_KEY
+    except Exception as e:
+        raise RuntimeError(
+            "Missing GOOGLE_MAPS_API_KEY in .env or dbinfo.py"
+        ) from e
+
+
+def get_gemini_key() -> str:
+    key = os.getenv("GOOGLE_API_KEY")
+    if key:
+        return key
+
+    try:
+        import dbinfo  # type: ignore
+        return dbinfo.GOOGLE_API_KEY
+    except Exception as e:
+        raise RuntimeError(
+            "Missing GOOGLE_API_KEY in .env or dbinfo.py"
+        ) from e
+
+
+def get_gemini_model_name() -> str:
+    return os.getenv("GEMINI_MODEL", "models/gemini-2.5-flash-lite")
+
+
+def get_station_snapshot(station_id: int) -> Optional[Dict[str, Any]]:
+    sql = f"""
+        SELECT
+            s.number AS station_id,
+            s.name,
+            s.address,
+            s.position_lat AS latitude,
+            s.position_lng AS longitude,
+            COALESCE(a.total_bike_stands, s.bikestands) AS capacity,
+            a.available_bikes,
+            a.available_bike_stands,
+            a.status,
+            a.last_update,
+            a.mechanical_bikes,
+            a.electrical_bikes
+        FROM {TBL_STATION} s
+        LEFT JOIN (
+            SELECT a1.*
+            FROM {TBL_AVAILABILITY} a1
+            INNER JOIN (
+                SELECT number, MAX(last_update) AS max_last_update
+                FROM {TBL_AVAILABILITY}
+                GROUP BY number
+            ) latest
+            ON a1.number = latest.number
+            AND a1.last_update = latest.max_last_update
+        ) a
+        ON s.number = a.number
+        WHERE s.number = %s
+        LIMIT 1
+    """
+    rows = q(sql, (station_id,))
+    return rows[0] if rows else None
+
+
+def get_top_station_snapshots(limit: int = 8) -> List[Dict[str, Any]]:
+    safe_limit = max(1, min(int(limit), 20))
+
+    sql = f"""
+        SELECT
+            s.number AS station_id,
+            s.name,
+            s.address,
+            s.position_lat AS latitude,
+            s.position_lng AS longitude,
+            COALESCE(a.total_bike_stands, s.bikestands) AS capacity,
+            a.available_bikes,
+            a.available_bike_stands,
+            a.status,
+            a.last_update
+        FROM {TBL_STATION} s
+        LEFT JOIN (
+            SELECT a1.*
+            FROM {TBL_AVAILABILITY} a1
+            INNER JOIN (
+                SELECT number, MAX(last_update) AS max_last_update
+                FROM {TBL_AVAILABILITY}
+                GROUP BY number
+            ) latest
+            ON a1.number = latest.number
+            AND a1.last_update = latest.max_last_update
+        ) a
+        ON s.number = a.number
+        ORDER BY COALESCE(a.available_bikes, 0) DESC, s.number ASC
+        LIMIT {safe_limit}
+    """
+    return q(sql)
+
+
+def infer_station_from_reply(
+    reply_text: str,
+    explicit_station: Optional[Dict[str, Any]],
+    candidate_stations: List[Dict[str, Any]],
+) -> Optional[Dict[str, Any]]:
+    if explicit_station:
+        return explicit_station
+
+    if not reply_text or not candidate_stations:
+        return None
+
+    normalized_reply = normalize_text(reply_text)
+
+    for station in candidate_stations:
+        station_name = str(station.get("name") or "").strip()
+        if not station_name:
+            continue
+
+        normalized_name = normalize_text(station_name)
+
+        if normalized_name and normalized_name in normalized_reply:
+            return station
+
+        name_tokens = normalized_name.split()
+        if len(name_tokens) >= 2:
+            joined = " ".join(name_tokens[:2])
+            if joined in normalized_reply:
+                return station
+
+    return None
 
 
 # -----------------------------
@@ -247,9 +396,14 @@ def home():
 
 @app.get("/dashboard")
 def dashboard():
+    try:
+        maps_key = get_google_maps_key()
+    except Exception:
+        maps_key = ""
+
     return render_template(
         "dashboard.html",
-        google_maps_api_key=os.getenv("GOOGLE_MAPS_API_KEY", "")
+        google_maps_api_key=maps_key
     )
 
 
@@ -266,6 +420,11 @@ def sign_in():
 @app.get("/journey-planner")
 def journey_planner():
     return render_template("journey_planner.html")
+
+
+@app.get("/about")
+def about():
+    return render_template("about.html")
 
 
 # -----------------------------
@@ -654,8 +813,141 @@ def api_assistant_recommend():
 
 
 # -----------------------------
+# API: AI chat (Gemini)
+# -----------------------------
+@app.post("/api/ai/chat")
+def api_ai_chat():
+    try:
+        data = request.get_json(silent=True) or {}
+
+        message = (data.get("message") or "").strip()
+        station_id = data.get("station_id")
+        history = data.get("history") or []
+
+        if not message:
+            return jsonify({"ok": False, "error": "Message is required."}), 400
+
+        api_key = get_gemini_key()
+        genai.configure(api_key=api_key)
+
+        weather = fetch_current_live()
+
+        selected_station = None
+        if station_id is not None:
+            try:
+                selected_station = get_station_snapshot(int(station_id))
+            except Exception:
+                selected_station = None
+
+        top_stations = get_top_station_snapshots(limit=8)
+
+        compact_history_lines = []
+        if isinstance(history, list):
+            for item in history[-6:]:
+                role = str(item.get("role", "user")).strip().lower()
+                content = str(item.get("content", "")).strip()
+                if not content:
+                    continue
+                if role not in {"user", "assistant"}:
+                    role = "user"
+                compact_history_lines.append(f"{role.title()}: {content}")
+
+        history_block = "\n".join(compact_history_lines) if compact_history_lines else "No previous chat history."
+
+        selected_station_block = "No station is currently selected."
+        if selected_station:
+            selected_station_block = (
+                f"Selected station:\n"
+                f"- Name: {selected_station.get('name')}\n"
+                f"- Address: {selected_station.get('address')}\n"
+                f"- Available bikes: {selected_station.get('available_bikes')}\n"
+                f"- Available docks: {selected_station.get('available_bike_stands')}\n"
+                f"- Capacity: {selected_station.get('capacity')}\n"
+                f"- Status: {selected_station.get('status')}\n"
+                f"- Mechanical bikes: {selected_station.get('mechanical_bikes')}\n"
+                f"- Electrical bikes: {selected_station.get('electrical_bikes')}\n"
+            )
+
+        top_station_lines = []
+        for station in top_stations:
+            top_station_lines.append(
+                f"- {station.get('name')} | bikes={station.get('available_bikes')} | "
+                f"docks={station.get('available_bike_stands')} | status={station.get('status')} | "
+                f"address={station.get('address')}"
+            )
+        top_station_block = "\n".join(top_station_lines) if top_station_lines else "No station snapshot available."
+
+        prompt = f"""
+You are G8BikeShare AI, a helpful assistant for a Dublin bike-sharing web application.
+
+Your job:
+- Help users find good stations for borrowing or returning bikes.
+- Use the provided live weather and station availability data.
+- Answer questions about ride conditions, bike availability, dock availability, and how to use the service.
+- If the user asks for a journey or route, suggest using the Journey Planner or Google Maps directions.
+- Keep answers practical, concise, and user-friendly.
+- Do not invent unavailable data.
+- If data is missing, say so clearly.
+- When recommending a station, mention its station name clearly in the reply.
+
+Current weather:
+- Temperature: {weather.get('temp')} °C
+- Feels like: {weather.get('feels_like')} °C
+- Humidity: {weather.get('humidity')} %
+- Wind speed: {weather.get('wind_speed')} m/s
+- Main condition: {weather.get('weather_main')}
+- Description: {weather.get('weather_description')}
+- Rain 1h: {weather.get('rain_1h')}
+- Snow 1h: {weather.get('snow_1h')}
+
+{selected_station_block}
+
+Top stations snapshot:
+{top_station_block}
+
+Recent chat history:
+{history_block}
+
+User question:
+{message}
+
+Please answer in clear English. Keep the answer grounded in the data above and focused on G8BikeShare service information.
+""".strip()
+
+        model_name = get_gemini_model_name()
+        model = genai.GenerativeModel(model_name)
+        response = model.generate_content(prompt)
+
+        try:
+            reply_text = response.text.strip()
+        except Exception:
+            reply_text = "I could not generate a reply at the moment."
+
+        inferred_station = infer_station_from_reply(
+            reply_text=reply_text,
+            explicit_station=selected_station,
+            candidate_stations=top_stations,
+        )
+
+        return jsonify({
+            "ok": True,
+            "reply": reply_text,
+            "weather": weather,
+            "selected_station": inferred_station
+        })
+
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+
+# -----------------------------
 # Main
 # -----------------------------
 if __name__ == "__main__":
     ensure_users_table()
-    app.run(debug=True)
+
+    debug_mode = os.getenv("FLASK_DEBUG", "1") == "1"
+    host = os.getenv("FLASK_RUN_HOST", "127.0.0.1")
+    port = int(os.getenv("PORT", "5000"))
+
+    app.run(host=host, port=port, debug=debug_mode)

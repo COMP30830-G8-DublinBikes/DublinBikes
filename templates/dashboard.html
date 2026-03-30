@@ -3,19 +3,13 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>BikeShare – Dublin Bikes Dashboard</title>
+  <title>G8BikeShare – Dublin Bikes Dashboard</title>
 
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
   <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}" />
 
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-    crossorigin=""
-  />
-
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
   <style>
     .topbar {
       flex-wrap: wrap;
@@ -31,7 +25,6 @@
     .nav-link-btn,
     .nav-solid-btn,
     .small-btn,
-    .toggle-btn,
     .ghost-btn {
       display: inline-flex;
       align-items: center;
@@ -45,6 +38,12 @@
       color: #1d4ed8;
       cursor: pointer;
       transition: 0.2s ease;
+    }
+
+    .nav-link-btn:hover,
+    .ghost-btn:hover,
+    .small-btn:hover {
+      background: #eef2ff;
     }
 
     .nav-solid-btn,
@@ -121,24 +120,6 @@
       background: #fff;
     }
 
-    .assistant-box {
-      background: #f8fafc;
-      border: 1px solid #e5e7eb;
-      border-radius: 18px;
-      padding: 16px;
-      line-height: 1.8;
-      color: #334155;
-      min-height: 148px;
-      white-space: pre-line;
-    }
-
-    .assistant-meta {
-      margin-top: 12px;
-      color: #64748b;
-      font-size: 13px;
-      line-height: 1.7;
-    }
-
     .weather-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -172,6 +153,30 @@
       line-height: 1.7;
     }
 
+    #map {
+      width: 100%;
+      min-height: 520px;
+      border-radius: 24px;
+      overflow: hidden;
+      background: #eef2ff;
+      border: 1px solid #e5e7eb;
+    }
+
+    .map-error {
+      min-height: 520px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 24px;
+      color: #991b1b;
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      border-radius: 24px;
+      line-height: 1.8;
+      font-weight: 700;
+    }
+
     @media (max-width: 720px) {
       .topbar-actions,
       .weather-grid,
@@ -194,10 +199,29 @@
 <body>
   <div class="container">
     <div class="topbar">
-      <div class="brand">
-        <div class="dot">🚲</div>
-        BikeShare
-      </div>
+      <a class="brand" href="{{ url_for('home') }}" aria-label="G8BikeShare Home">
+        <div class="brand-mark">
+          <svg viewBox="0 0 64 64" aria-hidden="true">
+            <defs>
+              <linearGradient id="g8grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#60a5fa"></stop>
+                <stop offset="100%" stop-color="#1d4ed8"></stop>
+              </linearGradient>
+            </defs>
+            <rect x="4" y="4" width="56" height="56" rx="16" fill="url(#g8grad)"></rect>
+            <circle cx="21" cy="42" r="8" fill="none" stroke="white" stroke-width="3"></circle>
+            <circle cx="43" cy="42" r="8" fill="none" stroke="white" stroke-width="3"></circle>
+            <path d="M21 42 L28 27 L35 42 L43 42" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>
+            <path d="M28 27 H37" fill="none" stroke="white" stroke-width="3" stroke-linecap="round"></path>
+            <path d="M31 20 C25 20,25 29,31 29 C37 29,37 20,31 20 Z" fill="none" stroke="white" stroke-width="2.4"></path>
+            <path d="M39 20 C33 20,33 29,39 29 C45 29,45 20,39 20 Z" fill="none" stroke="white" stroke-width="2.4"></path>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <span class="brand-title"><span class="brand-accent">G8</span>BikeShare</span>
+          <span class="brand-subtitle">Smart Dublin Bike Companion</span>
+        </div>
+      </a>
 
       <div class="search">
         <input id="stationSearchInput" placeholder="Search station name or address..." />
@@ -207,7 +231,7 @@
         class="weather-pill"
         id="weather-pill"
         title="View weather page"
-        onclick="window.location.href='/weather'"
+        onclick="window.location.href='{{ url_for('weather_page') }}'"
       >
         <div class="badge">
           <span id="wx-icon">☁️</span>
@@ -218,15 +242,20 @@
 
       <div class="topbar-actions">
         <div id="sessionPill" class="session-pill">Guest</div>
-        <a class="nav-link-btn" href="/">Home</a>
-        <a class="nav-link-btn" href="/journey-planner">Journey Planner</a>
-        <a class="nav-solid-btn" href="/sign-in">Account</a>
+        <a class="nav-link-btn" href="{{ url_for('home') }}">Home</a>
+        <a class="nav-solid-btn" href="{{ url_for('dashboard') }}">Dashboard</a>
+        <a class="nav-link-btn" href="{{ url_for('journey_planner') }}">Journey Planner</a>
+        <a class="nav-link-btn" href="{{ url_for('weather_page') }}">Weather</a>
+        <a class="nav-link-btn" href="{{ url_for('about') }}">About</a>
+        <a class="nav-link-btn" href="{{ url_for('sign_in') }}">Account</a>
       </div>
     </div>
 
     <section class="dashboard-hero">
-      <h1>Dublin Bikes Dashboard</h1>
-      <p>Explore live station status, current weather, journey support, AI riding advice and 48-hour bike trends across Dublin.</p>
+      <h1>G8BikeShare Dashboard</h1>
+      <p>
+        Explore live station status, current weather, journey support, AI riding advice and 48-hour bike trends across Dublin.
+      </p>
     </section>
 
     <main class="dashboard-layout">
@@ -283,16 +312,53 @@
             <button class="small-btn active" id="refreshAdviceBtn" type="button">Refresh advice</button>
           </div>
         </div>
+
+        <div class="card ai-card" id="ai-assistant-card">
+          <div class="ai-card-head">
+            <h2>AI Bike Assistant</h2>
+            <p>
+              Ask for bike pickup suggestions, return station ideas, or weather-aware riding advice.
+            </p>
+          </div>
+
+          <div class="ai-chat-messages" id="aiChatMessages">
+            <div class="ai-message ai-message-bot">
+              Hi! Try asking:
+              Which station is good for picking up a bike near the city centre?
+            </div>
+          </div>
+
+          <form id="aiChatForm" class="ai-chat-form">
+            <input
+              id="aiChatInput"
+              class="ai-chat-input"
+              type="text"
+              maxlength="300"
+              placeholder="Ask the AI assistant..."
+              required
+            />
+            <button id="aiChatSendBtn" class="ai-send-btn" type="submit">Send</button>
+          </form>
+
+          <div class="ai-chat-status" id="aiChatStatus"></div>
+          <div class="ai-weather-context" id="aiWeatherContext" hidden></div>
+        </div>
       </aside>
     </main>
   </div>
 
-  <script
-    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-    crossorigin=""
-  ></script>
-
   <script src="{{ url_for('static', filename='dashboard.js') }}"></script>
+
+  {% if google_maps_api_key %}
+    <script
+      async
+      defer
+      src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&callback=initGoogleMap&libraries=marker&v=weekly">
+    </script>
+  {% else %}
+    <script>
+      window.GOOGLE_MAPS_KEY_MISSING = true;
+    </script>
+  {% endif %}
 </body>
 </html>

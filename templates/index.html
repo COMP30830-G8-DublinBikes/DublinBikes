@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>BikeShare – Dublin Bike Finder</title>
+  <title>G8BikeShare – Dublin Bike Finder</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
   <style>
     .home-page {
@@ -35,26 +35,57 @@
       top: 16px;
       z-index: 20;
       backdrop-filter: blur(10px);
+      flex-wrap: wrap;
     }
 
     .home-brand {
-      display: flex;
+      display: inline-flex;
       align-items: center;
-      gap: 12px;
-      font-weight: 800;
-      font-size: 28px;
-      color: #111827;
+      gap: 14px;
       text-decoration: none;
+      color: #0f172a;
+      min-width: fit-content;
     }
 
-    .home-brand-badge {
-      width: 48px;
-      height: 48px;
-      border-radius: 16px;
-      background: linear-gradient(180deg, #eef2ff, #e0e7ff);
+    .home-brand-mark {
+      width: 54px;
+      height: 54px;
       display: grid;
       place-items: center;
-      font-size: 22px;
+      border-radius: 16px;
+      box-shadow: 0 12px 28px rgba(37, 99, 235, 0.18);
+      flex-shrink: 0;
+    }
+
+    .home-brand-mark svg {
+      width: 54px;
+      height: 54px;
+      display: block;
+    }
+
+    .home-brand-text {
+      display: flex;
+      flex-direction: column;
+      line-height: 1;
+    }
+
+    .home-brand-title {
+      font-size: 2rem;
+      font-weight: 900;
+      letter-spacing: -0.04em;
+      color: #0f172a;
+    }
+
+    .home-brand-accent {
+      color: #2563eb;
+    }
+
+    .home-brand-subtitle {
+      margin-top: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #64748b;
+      letter-spacing: 0.02em;
     }
 
     .home-links {
@@ -503,6 +534,20 @@
       .hero-panel {
         padding: 20px;
       }
+
+      .home-brand-mark,
+      .home-brand-mark svg {
+        width: 46px;
+        height: 46px;
+      }
+
+      .home-brand-title {
+        font-size: 1.6rem;
+      }
+
+      .home-brand-subtitle {
+        font-size: 11px;
+      }
     }
   </style>
 </head>
@@ -510,9 +555,28 @@
   <div class="home-page">
     <div class="home-shell">
       <nav class="home-nav">
-        <a class="home-brand" href="{{ url_for('home') }}">
-          <span class="home-brand-badge">🚲</span>
-          <span>BikeShare</span>
+        <a class="home-brand" href="{{ url_for('home') }}" aria-label="G8BikeShare Home">
+          <div class="home-brand-mark">
+            <svg viewBox="0 0 64 64" aria-hidden="true">
+              <defs>
+                <linearGradient id="g8homegrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#60a5fa"></stop>
+                  <stop offset="100%" stop-color="#1d4ed8"></stop>
+                </linearGradient>
+              </defs>
+              <rect x="4" y="4" width="56" height="56" rx="16" fill="url(#g8homegrad)"></rect>
+              <circle cx="21" cy="42" r="8" fill="none" stroke="white" stroke-width="3"></circle>
+              <circle cx="43" cy="42" r="8" fill="none" stroke="white" stroke-width="3"></circle>
+              <path d="M21 42 L28 27 L35 42 L43 42" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>
+              <path d="M28 27 H37" fill="none" stroke="white" stroke-width="3" stroke-linecap="round"></path>
+              <path d="M31 20 C25 20,25 29,31 29 C37 29,37 20,31 20 Z" fill="none" stroke="white" stroke-width="2.4"></path>
+              <path d="M39 20 C33 20,33 29,39 29 C45 29,45 20,39 20 Z" fill="none" stroke="white" stroke-width="2.4"></path>
+            </svg>
+          </div>
+          <div class="home-brand-text">
+            <span class="home-brand-title"><span class="home-brand-accent">G8</span>BikeShare</span>
+            <span class="home-brand-subtitle">Smart Dublin Bike Companion</span>
+          </div>
         </a>
 
         <div class="home-links">
@@ -520,7 +584,8 @@
           <a href="{{ url_for('dashboard') }}">Dashboard</a>
           <a href="{{ url_for('journey_planner') }}">Journey Planner</a>
           <a href="{{ url_for('weather_page') }}">Weather</a>
-          <a href="{{ url_for('sign_in') }}">Sign in</a>
+          <a href="{{ url_for('about') }}">About</a>
+          <a href="{{ url_for('sign_in') }}">Account</a>
         </div>
 
         <div class="home-nav-actions">
@@ -531,17 +596,17 @@
 
       <section class="hero">
         <div class="hero-copy">
-          <div class="eyebrow">Live city mobility • Dublin Bikes companion</div>
+          <div class="eyebrow">Live city mobility • Dublin bike companion</div>
           <h1>Find a bike, plan a route, and ride smarter in Dublin.</h1>
           <p>
-            BikeShare helps users check real-time station availability, explore bike trends,
+            G8BikeShare helps users check real-time station availability, explore bike trends,
             review current weather, and open cycling directions in seconds.
           </p>
 
           <div class="hero-actions">
             <a class="home-btn" href="{{ url_for('dashboard') }}">View live dashboard</a>
             <a class="home-btn-outline" href="{{ url_for('journey_planner') }}">Start journey planner</a>
-            <a class="home-btn-outline" href="{{ url_for('sign_in') }}">Sign in</a>
+            <a class="home-btn-outline" href="{{ url_for('sign_in') }}">Account</a>
           </div>
 
           <div class="hero-highlights">
@@ -577,9 +642,9 @@
             </div>
 
             <div class="mini-status-card">
-              <div class="label">Journey support</div>
-              <div class="value">Ready</div>
-              <div class="sub">Google Maps cycling directions</div>
+              <div class="label">AI support</div>
+              <div class="value">Live</div>
+              <div class="sub">rule-based and Gemini-powered assistance</div>
             </div>
           </div>
 
@@ -631,7 +696,7 @@
       <section class="section">
         <div class="section-head">
           <h2>Core features</h2>
-          <p>These modules match the features your project wants to demonstrate for a high-quality submission.</p>
+          <p>These modules show the main value of the G8BikeShare platform.</p>
         </div>
 
         <div class="features-grid">
@@ -658,9 +723,9 @@
 
           <article class="feature-card">
             <div class="feature-icon">✨</div>
-            <h3>Smart assistant</h3>
-            <p>Use rule-based ride suggestions now, with room to extend into a fuller GenAI assistant later.</p>
-            <a href="{{ url_for('dashboard') }}">Open assistant-ready dashboard →</a>
+            <h3>AI Bike Assistant</h3>
+            <p>Use rule-based advice and AI chat to ask natural-language questions about borrowing, returning, and ride conditions.</p>
+            <a href="{{ url_for('dashboard') }}">Open AI-ready dashboard →</a>
           </article>
         </div>
       </section>
@@ -695,7 +760,7 @@
       <section class="cta-banner">
         <div>
           <h2>Ready to explore Dublin Bikes in real time?</h2>
-          <p>Open the dashboard for live markers and historical charts, or jump straight into route planning.</p>
+          <p>Open the dashboard for live markers, historical charts, and AI-guided riding advice.</p>
         </div>
         <div class="home-nav-actions">
           <a class="home-btn-outline" href="{{ url_for('journey_planner') }}">Journey planner</a>
@@ -704,7 +769,7 @@
       </section>
 
       <div class="footer">
-        BikeShare • UCD Software Engineering Project • Dublin bike availability, weather and journey planning
+        G8BikeShare • UCD Software Engineering Project • Dublin bike availability, weather and journey planning
       </div>
     </div>
   </div>
@@ -763,7 +828,10 @@
 
         setText("heroWeather", desc);
         setText("weatherSummaryTemp", temp);
-        setText("weatherSummaryDesc", `Current condition: ${desc}. Humidity: ${safeValue(weather.humidity)}%. Wind: ${safeValue(weather.wind_speed)} m/s.`);
+        setText(
+          "weatherSummaryDesc",
+          `Current condition: ${desc}. Humidity: ${safeValue(weather.humidity)}%. Wind: ${safeValue(weather.wind_speed)} m/s.`
+        );
       } catch (error) {
         console.error("Failed to load weather summary:", error);
         setText("heroWeather", "Unavailable");
@@ -777,14 +845,16 @@
         const response = await fetch("/api/auth/me");
         const result = await response.json();
 
+        const statAuthEl = document.getElementById("statAuth");
+
         if (result.authenticated && result.user) {
           setText("statAuth", "Signed in");
           setText("statAuthNote", `Current user: ${result.user.username}`);
-          document.getElementById("statAuth").className = "status-ok";
+          if (statAuthEl) statAuthEl.className = "status-ok";
         } else {
           setText("statAuth", "Guest");
           setText("statAuthNote", "No active login session right now.");
-          document.getElementById("statAuth").className = "status-muted";
+          if (statAuthEl) statAuthEl.className = "status-muted";
         }
       } catch (error) {
         console.error("Failed to load auth status:", error);

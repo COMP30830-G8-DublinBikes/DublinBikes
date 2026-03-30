@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Weather – BikeShare</title>
+  <title>Weather – G8BikeShare</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
@@ -28,23 +28,53 @@
     }
 
     .weather-brand {
-      display: flex;
+      display: inline-flex;
       align-items: center;
-      gap: 12px;
-      font-size: 28px;
-      font-weight: 800;
-      color: #111827;
+      gap: 14px;
       text-decoration: none;
+      color: #0f172a;
+      min-width: fit-content;
     }
 
-    .weather-brand-badge {
-      width: 46px;
-      height: 46px;
-      border-radius: 16px;
+    .weather-brand-mark {
+      width: 54px;
+      height: 54px;
       display: grid;
       place-items: center;
-      background: linear-gradient(180deg, #eef2ff, #e0e7ff);
-      font-size: 22px;
+      border-radius: 16px;
+      box-shadow: 0 12px 28px rgba(37, 99, 235, 0.18);
+      flex-shrink: 0;
+    }
+
+    .weather-brand-mark svg {
+      width: 54px;
+      height: 54px;
+      display: block;
+    }
+
+    .weather-brand-text {
+      display: flex;
+      flex-direction: column;
+      line-height: 1;
+    }
+
+    .weather-brand-title {
+      font-size: 2rem;
+      font-weight: 900;
+      letter-spacing: -0.04em;
+      color: #0f172a;
+    }
+
+    .weather-brand-accent {
+      color: #2563eb;
+    }
+
+    .weather-brand-subtitle {
+      margin-top: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #64748b;
+      letter-spacing: 0.02em;
     }
 
     .weather-nav-actions {
@@ -201,10 +231,6 @@
       line-height: 1.8;
     }
 
-    .muted {
-      color: #64748b;
-    }
-
     .error-box {
       background: #fff7ed;
       border: 1px solid #fed7aa;
@@ -233,6 +259,20 @@
       .chart-wrap {
         min-height: 300px;
       }
+
+      .weather-brand-mark,
+      .weather-brand-mark svg {
+        width: 46px;
+        height: 46px;
+      }
+
+      .weather-brand-title {
+        font-size: 1.6rem;
+      }
+
+      .weather-brand-subtitle {
+        font-size: 11px;
+      }
     }
 
     @media (max-width: 560px) {
@@ -245,14 +285,34 @@
 <body>
   <div class="weather-page">
     <nav class="weather-nav">
-      <a class="weather-brand" href="{{ url_for('home') }}">
-        <span class="weather-brand-badge">🌤️</span>
-        <span>BikeShare</span>
+      <a class="weather-brand" href="{{ url_for('home') }}" aria-label="G8BikeShare Home">
+        <div class="weather-brand-mark">
+          <svg viewBox="0 0 64 64" aria-hidden="true">
+            <defs>
+              <linearGradient id="g8weathergrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#60a5fa"></stop>
+                <stop offset="100%" stop-color="#1d4ed8"></stop>
+              </linearGradient>
+            </defs>
+            <rect x="4" y="4" width="56" height="56" rx="16" fill="url(#g8weathergrad)"></rect>
+            <circle cx="21" cy="42" r="8" fill="none" stroke="white" stroke-width="3"></circle>
+            <circle cx="43" cy="42" r="8" fill="none" stroke="white" stroke-width="3"></circle>
+            <path d="M21 42 L28 27 L35 42 L43 42" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>
+            <path d="M28 27 H37" fill="none" stroke="white" stroke-width="3" stroke-linecap="round"></path>
+            <path d="M31 20 C25 20,25 29,31 29 C37 29,37 20,31 20 Z" fill="none" stroke="white" stroke-width="2.4"></path>
+            <path d="M39 20 C33 20,33 29,39 29 C45 29,45 20,39 20 Z" fill="none" stroke="white" stroke-width="2.4"></path>
+          </svg>
+        </div>
+        <div class="weather-brand-text">
+          <span class="weather-brand-title"><span class="weather-brand-accent">G8</span>BikeShare</span>
+          <span class="weather-brand-subtitle">Smart Dublin Bike Companion</span>
+        </div>
       </a>
 
       <div class="weather-nav-actions">
         <a class="weather-btn-outline" href="{{ url_for('home') }}">Home</a>
         <a class="weather-btn-outline" href="{{ url_for('dashboard') }}">Dashboard</a>
+        <a class="weather-btn-outline" href="{{ url_for('about') }}">About</a>
         <a class="weather-btn" href="{{ url_for('journey_planner') }}">Journey Planner</a>
       </div>
     </nav>

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Sign in – BikeShare</title>
+  <title>Account – G8BikeShare</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
   <style>
     .auth-page {
@@ -35,23 +35,53 @@
     }
 
     .auth-brand {
-      display: flex;
+      display: inline-flex;
       align-items: center;
-      gap: 12px;
-      font-size: 28px;
-      font-weight: 800;
-      color: #111827;
+      gap: 14px;
       text-decoration: none;
+      color: #0f172a;
+      min-width: fit-content;
     }
 
-    .auth-brand-badge {
-      width: 48px;
-      height: 48px;
-      border-radius: 16px;
-      background: linear-gradient(180deg, #eef2ff, #e0e7ff);
+    .auth-brand-mark {
+      width: 54px;
+      height: 54px;
       display: grid;
       place-items: center;
-      font-size: 22px;
+      border-radius: 16px;
+      box-shadow: 0 12px 28px rgba(37, 99, 235, 0.18);
+      flex-shrink: 0;
+    }
+
+    .auth-brand-mark svg {
+      width: 54px;
+      height: 54px;
+      display: block;
+    }
+
+    .auth-brand-text {
+      display: flex;
+      flex-direction: column;
+      line-height: 1;
+    }
+
+    .auth-brand-title {
+      font-size: 2rem;
+      font-weight: 900;
+      letter-spacing: -0.04em;
+      color: #0f172a;
+    }
+
+    .auth-brand-accent {
+      color: #2563eb;
+    }
+
+    .auth-brand-subtitle {
+      margin-top: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #64748b;
+      letter-spacing: 0.02em;
     }
 
     .auth-nav-actions {
@@ -83,6 +113,11 @@
       background: #fff;
       color: #1d4ed8;
       border: 1px solid #c7d2fe;
+    }
+
+    .auth-btn:hover,
+    .auth-btn-outline:hover {
+      transform: translateY(-1px);
     }
 
     .auth-layout {
@@ -370,6 +405,20 @@
       .auth-card {
         padding: 22px;
       }
+
+      .auth-brand-mark,
+      .auth-brand-mark svg {
+        width: 46px;
+        height: 46px;
+      }
+
+      .auth-brand-title {
+        font-size: 1.6rem;
+      }
+
+      .auth-brand-subtitle {
+        font-size: 11px;
+      }
     }
   </style>
 </head>
@@ -377,14 +426,34 @@
   <div class="auth-page">
     <div class="auth-shell">
       <nav class="auth-nav">
-        <a class="auth-brand" href="{{ url_for('home') }}">
-          <span class="auth-brand-badge">🔐</span>
-          <span>BikeShare</span>
+        <a class="auth-brand" href="{{ url_for('home') }}" aria-label="G8BikeShare Home">
+          <div class="auth-brand-mark">
+            <svg viewBox="0 0 64 64" aria-hidden="true">
+              <defs>
+                <linearGradient id="g8authgrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#60a5fa"></stop>
+                  <stop offset="100%" stop-color="#1d4ed8"></stop>
+                </linearGradient>
+              </defs>
+              <rect x="4" y="4" width="56" height="56" rx="16" fill="url(#g8authgrad)"></rect>
+              <circle cx="21" cy="42" r="8" fill="none" stroke="white" stroke-width="3"></circle>
+              <circle cx="43" cy="42" r="8" fill="none" stroke="white" stroke-width="3"></circle>
+              <path d="M21 42 L28 27 L35 42 L43 42" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>
+              <path d="M28 27 H37" fill="none" stroke="white" stroke-width="3" stroke-linecap="round"></path>
+              <path d="M31 20 C25 20,25 29,31 29 C37 29,37 20,31 20 Z" fill="none" stroke="white" stroke-width="2.4"></path>
+              <path d="M39 20 C33 20,33 29,39 29 C45 29,45 20,39 20 Z" fill="none" stroke="white" stroke-width="2.4"></path>
+            </svg>
+          </div>
+          <div class="auth-brand-text">
+            <span class="auth-brand-title"><span class="auth-brand-accent">G8</span>BikeShare</span>
+            <span class="auth-brand-subtitle">Smart Dublin Bike Companion</span>
+          </div>
         </a>
 
         <div class="auth-nav-actions">
           <a class="auth-btn-outline" href="{{ url_for('home') }}">Home</a>
           <a class="auth-btn-outline" href="{{ url_for('dashboard') }}">Dashboard</a>
+          <a class="auth-btn-outline" href="{{ url_for('about') }}">About</a>
           <a class="auth-btn" href="{{ url_for('journey_planner') }}">Journey Planner</a>
         </div>
       </nav>
@@ -394,8 +463,8 @@
           <div class="auth-pill">Account access • Login and registration</div>
           <h1>Sign in to keep your bike journey flow simple.</h1>
           <p>
-            Create an account or sign in to continue using BikeShare as a returning user.
-            This gives your project a real authentication flow instead of a static mock page.
+            Create an account or sign in to continue using G8BikeShare as a returning user.
+            This keeps the project closer to a real product flow instead of a static demo page.
           </p>
 
           <div class="auth-feature-grid">
@@ -573,6 +642,7 @@
 
           showMessage(result.message || "Success.", "success");
           authForm.reset();
+
           if (currentMode === "register") {
             confirmPasswordGroup.classList.remove("hidden");
           }

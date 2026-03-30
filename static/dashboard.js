@@ -1,7 +1,9 @@
 const USE_MOCK_DATA = false;
 const AUTO_REFRESH_MS = 60000;
+const MAX_AI_HISTORY_ITEMS = 8;
 
 let map = null;
+let infoWindow = null;
 let markers = [];
 let historyChart = null;
 let allStations = [];
@@ -9,35 +11,89 @@ let displayedStations = [];
 let selectedStationId = null;
 let selectedSeries = "occupancy";
 let refreshTimer = null;
+let aiChatHistory = [];
 
-const DEFAULT_CENTER = [53.3498, -6.2603];
+const DEFAULT_CENTER = { lat: 53.3498, lng: -6.2603 };
 const DEFAULT_ZOOM = 13;
+const GOOGLE_TEST_MAP_ID = "DEMO_MAP_ID";
+
+let resolveMapReady;
+const mapReady = new Promise((resolve) => {
+  resolveMapReady = resolve;
+});
+
+window.initGoogleMap = function () {
+  try {
+    const mapElement = document.getElementById("map");
+    if (!mapElement) {
+      resolveMapReady(false);
+      return;
+    }
+
+    map = new google.maps.Map(mapElement, {
+      center: DEFAULT_CENTER,
+      zoom: DEFAULT_ZOOM,
+      mapId: GOOGLE_TEST_MAP_ID,
+      streetViewControl: false,
+      mapTypeControl: false,
+      fullscreenControl: true
+    });
+
+    infoWindow = new google.maps.InfoWindow();
+    resolveMapReady(true);
+  } catch (error) {
+    console.error("Google Map init failed:", error);
+    renderMapError("Google Maps failed to initialize.");
+    resolveMapReady(false);
+  }
+};
+
+window.gm_authFailure = function () {
+  renderMapError("Google Maps authentication failed. Check your API key, referrer restrictions, and billing.");
+  resolveMapReady(false);
+};
 
 window.addEventListener("DOMContentLoaded", async () => {
   bindSearch();
   bindTrendToggles();
   bindAssistantRefresh();
-  initMap();
+  bindAiAssistant();
+
+  if (window.GOOGLE_MAPS_KEY_MISSING) {
+    renderMapError("Google Maps API key is missing. Add GOOGLE_MAPS_API_KEY to your configuration first.");
+    return;
+  }
+
+  const ready = await waitForMapReady();
+  if (!ready) return;
+
   await Promise.all([
     loadSessionState(),
     loadWeather(),
     loadStations(true)
   ]);
+
   startAutoRefresh();
 });
 
-function initMap() {
+function waitForMapReady() {
+  return Promise.race([
+    mapReady,
+    new Promise((resolve) => {
+      setTimeout(() => {
+        if (!map) {
+          renderMapError("Google Maps did not load in time. Check your internet connection and API key settings.");
+          resolve(false);
+        }
+      }, 8000);
+    })
+  ]);
+}
+
+function renderMapError(message) {
   const mapElement = document.getElementById("map");
   if (!mapElement) return;
-
-  map = L.map("map", { zoomControl: true }).setView(DEFAULT_CENTER, DEFAULT_ZOOM);
-
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    maxZoom: 19,
-    attribution: "&copy; OpenStreetMap contributors"
-  }).addTo(map);
-
-  setTimeout(() => map.invalidateSize(), 120);
+  mapElement.innerHTML = `<div class="map-error">${escapeHtml(message)}</div>`;
 }
 
 function bindSearch() {
@@ -46,13 +102,14 @@ function bindSearch() {
 
   searchInput.addEventListener("input", async (event) => {
     const keyword = event.target.value.trim().toLowerCase();
+
     displayedStations = allStations.filter((station) => {
       const name = String(station.name || "").toLowerCase();
       const address = String(station.address || "").toLowerCase();
       return !keyword || name.includes(keyword) || address.includes(keyword);
     });
 
-    renderMarkers(displayedStations);
+    renderMarkers(displayedStations, { fitToBounds: true });
     updateMapSummary(displayedStations);
 
     if (!displayedStations.length) {
@@ -67,7 +124,7 @@ function bindSearch() {
     );
 
     if (!stillVisible) {
-      await selectStation(displayedStations[0].station_id);
+      await selectStation(displayedStations[0].station_id, false);
     }
   });
 }
@@ -76,6 +133,7 @@ function bindTrendToggles() {
   document.querySelectorAll("[data-series]").forEach((button) => {
     button.addEventListener("click", async () => {
       selectedSeries = button.dataset.series || "occupancy";
+
       document.querySelectorAll("[data-series]").forEach((btn) => btn.classList.remove("active"));
       button.classList.add("active");
 
@@ -96,6 +154,23 @@ function bindAssistantRefresh() {
       return;
     }
     await loadAssistantAdvice(selectedStationId);
+  });
+}
+
+function bindAiAssistant() {
+  const form = document.getElementById("aiChatForm");
+  const input = document.getElementById("aiChatInput");
+
+  if (!form || !input) return;
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    const message = input.value.trim();
+    if (!message) return;
+
+    input.value = "";
+    await sendAiChatMessage(message);
   });
 }
 
@@ -159,7 +234,7 @@ function renderWeatherCard(weather) {
 
   weatherCard.innerHTML = `
     <h2>Current Weather</h2>
-    <p><strong>Description:</strong> ${safeValue(weather.weather_description)}</p>
+    <p><strong>Description:</strong> ${escapeHtml(safeValue(weather.weather_description))}</p>
     <div class="weather-grid">
       <div class="weather-mini">
         <div class="label">Temperature</div>
@@ -178,7 +253,7 @@ function renderWeatherCard(weather) {
         <div class="value">${safeValue(weather.wind_speed)} m/s</div>
       </div>
     </div>
-    <p><strong>Condition:</strong> ${safeValue(weather.weather_main)}</p>
+    <p><strong>Condition:</strong> ${escapeHtml(safeValue(weather.weather_main))}</p>
     <p><strong>Rain (1h):</strong> ${weather.rain_1h == null ? "N/A" : `${weather.rain_1h} mm`}</p>
   `;
 }
@@ -236,7 +311,8 @@ async function loadStations(initialLoad = false) {
       return !keyword || name.includes(keyword) || address.includes(keyword);
     });
 
-    renderMarkers(displayedStations);
+    const shouldFitMap = initialLoad || selectedStationId == null;
+    renderMarkers(displayedStations, { fitToBounds: shouldFitMap });
     updateMapSummary(displayedStations);
     updateRefreshStamp();
 
@@ -252,7 +328,7 @@ async function loadStations(initialLoad = false) {
     );
 
     if (initialLoad || !selectedStillExists) {
-      await selectStation(displayedStations[0].station_id);
+      await selectStation(displayedStations[0].station_id, false);
       return;
     }
 
@@ -262,6 +338,10 @@ async function loadStations(initialLoad = false) {
 
     if (currentStation) {
       renderStationCard(currentStation);
+      await Promise.all([
+        loadHistory(selectedStationId),
+        loadAssistantAdvice(selectedStationId)
+      ]);
     }
   } catch (error) {
     console.error("Station load failed:", error);
@@ -295,77 +375,126 @@ function updateRefreshStamp() {
   chip.textContent = `Last refresh: ${now.toLocaleTimeString("en-IE", { hour: "2-digit", minute: "2-digit" })}`;
 }
 
-function renderMarkers(rows) {
-  if (!map) return;
+function renderMarkers(rows, options = {}) {
+  const { fitToBounds = true } = options;
+
+  if (!map || !window.google?.maps?.marker?.AdvancedMarkerElement) return;
 
   clearMarkers();
-  const bounds = [];
+
+  if (!rows.length) {
+    resetMapView();
+    return;
+  }
+
+  const bounds = new google.maps.LatLngBounds();
 
   rows.forEach((row) => {
     const lat = Number(row.latitude);
     const lng = Number(row.longitude);
     if (Number.isNaN(lat) || Number.isNaN(lng)) return;
 
+    const isSelected = Number(row.station_id) === Number(selectedStationId);
     const color = getMarkerColor(row.available_bikes, row.capacity);
+    const content = createMarkerBubble(color, isSelected);
 
-    const marker = L.circleMarker([lat, lng], {
-      radius: Number(row.station_id) === Number(selectedStationId) ? 12 : 10,
-      color: "#ffffff",
-      weight: 2,
-      fillColor: color,
-      fillOpacity: 1
-    }).addTo(map);
-
-    marker.bindPopup(`
-      <div style="min-width: 180px; line-height: 1.6;">
-        <strong>${safeValue(row.name)}</strong><br>
-        ${safeValue(row.address)}<br><br>
-        Bikes: ${safeValue(row.available_bikes)}<br>
-        Docks: ${safeValue(row.available_bike_stands)}<br>
-        Status: ${safeValue(row.status)}
-      </div>
-    `);
-
-    marker.on("click", async () => {
-      await selectStation(row.station_id);
+    const marker = new google.maps.marker.AdvancedMarkerElement({
+      map,
+      position: { lat, lng },
+      title: row.name || "",
+      content,
+      gmpClickable: true
     });
 
-    markers.push(marker);
-    bounds.push([lat, lng]);
+    marker.addListener("click", async () => {
+      await selectStation(row.station_id, true);
+    });
+
+    markers.push({
+      stationId: Number(row.station_id),
+      marker,
+      row
+    });
+
+    bounds.extend({ lat, lng });
   });
 
-  if (bounds.length > 0) {
-    map.fitBounds(bounds, {
-      padding: [30, 30],
-      maxZoom: 15
-    });
-  } else {
-    resetMapView();
+  if (fitToBounds) {
+    map.fitBounds(bounds);
+
+    if (rows.length === 1) {
+      map.setZoom(15);
+    }
   }
 }
 
-async function selectStation(stationId) {
+function createMarkerBubble(color, isSelected) {
+  const bubble = document.createElement("div");
+  bubble.style.width = isSelected ? "22px" : "18px";
+  bubble.style.height = isSelected ? "22px" : "18px";
+  bubble.style.borderRadius = "999px";
+  bubble.style.background = color;
+  bubble.style.border = "2px solid #ffffff";
+  bubble.style.boxShadow = isSelected
+    ? "0 0 0 2px rgba(37,99,235,0.35), 0 8px 18px rgba(15,23,42,0.22)"
+    : "0 6px 16px rgba(15,23,42,0.20)";
+  bubble.style.transform = isSelected ? "scale(1.08)" : "scale(1)";
+  bubble.style.transition = "all 0.2s ease";
+  return bubble;
+}
+
+async function selectStation(stationId, openInfoWindowAfterRender = false) {
   selectedStationId = Number(stationId);
 
   const station = allStations.find((row) => Number(row.station_id) === Number(selectedStationId));
   if (!station) return;
 
-  renderMarkers(displayedStations.length ? displayedStations : allStations);
+  renderMarkers(displayedStations.length ? displayedStations : allStations, { fitToBounds: false });
   renderStationCard(station);
+
   await Promise.all([
     loadHistory(selectedStationId),
     loadAssistantAdvice(selectedStationId)
   ]);
+
+  if (openInfoWindowAfterRender) {
+    openSelectedInfoWindow();
+  }
+}
+
+function openSelectedInfoWindow() {
+  const selectedEntry = markers.find((entry) => Number(entry.stationId) === Number(selectedStationId));
+  if (!selectedEntry || !infoWindow) return;
+
+  const row = selectedEntry.row;
+
+  infoWindow.setContent(`
+    <div style="min-width: 180px; line-height: 1.6;">
+      <strong>${escapeHtml(safeValue(row.name))}</strong><br>
+      ${escapeHtml(safeValue(row.address))}<br><br>
+      Bikes: ${safeValue(row.available_bikes)}<br>
+      Docks: ${safeValue(row.available_bike_stands)}<br>
+      Status: ${escapeHtml(safeValue(row.status))}
+    </div>
+  `);
+
+  infoWindow.open({
+    map,
+    anchor: selectedEntry.marker
+  });
 }
 
 function clearMarkers() {
-  markers.forEach((marker) => marker.remove());
+  markers.forEach((entry) => {
+    entry.marker.map = null;
+  });
   markers = [];
 }
 
 function resetMapView() {
   if (!map) return;
-  map.setView(DEFAULT_CENTER, DEFAULT_ZOOM);
+  map.setCenter(DEFAULT_CENTER);
+  map.setZoom(DEFAULT_ZOOM);
 }
 
 function renderStationCard(row) {
@@ -383,10 +512,10 @@ function renderStationCard(row) {
       : "#";
 
   stationCard.innerHTML = `
-    <h2>${safeValue(row.name)}</h2>
-    <p>${safeValue(row.address)}</p>
+    <h2>${escapeHtml(safeValue(row.name))}</h2>
+    <p>${escapeHtml(safeValue(row.address))}</p>
 
-    <div class="station-status">${statusText}</div>
+    <div class="station-status">${escapeHtml(statusText)}</div>
 
     <div class="station-meta">
       <div class="metric-box">
@@ -401,8 +530,8 @@ function renderStationCard(row) {
 
     <p><strong>Total Capacity:</strong> ${safeValue(row.capacity)}</p>
     <p><strong>Occupancy:</strong> ${occupancy}%</p>
-    <p><strong>Status:</strong> ${safeValue(row.status)}</p>
-    <p><strong>Last Update:</strong> ${safeValue(row.last_update)}</p>
+    <p><strong>Status:</strong> ${escapeHtml(safeValue(row.status))}</p>
+    <p><strong>Last Update:</strong> ${escapeHtml(safeValue(row.last_update))}</p>
     <p><strong>Mechanical Bikes:</strong> ${safeValue(row.mechanical_bikes)}</p>
     <p><strong>Electrical Bikes:</strong> ${safeValue(row.electrical_bikes)}</p>
 
@@ -425,7 +554,7 @@ function renderStationEmpty(message) {
   if (!stationCard) return;
   stationCard.innerHTML = `
     <h2>Station Details</h2>
-    <p>${message}</p>
+    <p>${escapeHtml(message)}</p>
   `;
 }
 
@@ -566,7 +695,7 @@ function renderHistoryEmpty(message = "No historical data available.") {
       <button class="small-btn" data-series="bikes" type="button">Avg bikes</button>
       <button class="small-btn" data-series="stands" type="button">Avg docks</button>
     </div>
-    <p>${message}</p>
+    <p>${escapeHtml(message)}</p>
   `;
 
   bindTrendToggles();
@@ -633,6 +762,216 @@ function renderAssistantEmpty(message) {
   if (metaBox) metaBox.textContent = "The assistant becomes active after a station is selected.";
 }
 
+/* =========================
+   AI BIKE ASSISTANT
+========================= */
+
+async function sendAiChatMessage(message) {
+  appendAiChatMessage("user", message);
+
+  aiChatHistory.push({ role: "user", content: message });
+  aiChatHistory = aiChatHistory.slice(-MAX_AI_HISTORY_ITEMS);
+
+  setAiControlsDisabled(true);
+  setAiStatus("Thinking...");
+
+  try {
+    const response = await fetch("/api/ai/chat", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        message,
+        station_id: selectedStationId,
+        history: aiChatHistory
+      })
+    });
+
+    const result = await response.json();
+
+    if (!response.ok || !result.ok) {
+      appendAiChatMessage("bot", result.error || "The AI assistant is unavailable right now.");
+      renderAiWeatherContext(null);
+      setAiStatus("AI request failed.");
+      return;
+    }
+
+    const replyText = result.reply || "No reply returned.";
+
+    appendAiChatMessage("bot", replyText);
+    aiChatHistory.push({ role: "assistant", content: replyText });
+    aiChatHistory = aiChatHistory.slice(-MAX_AI_HISTORY_ITEMS);
+
+    renderAiWeatherContext(result.weather || null);
+
+    let highlightDone = false;
+    if (result.selected_station != null) {
+      highlightDone = await tryHighlightAiSelectedStation(result.selected_station);
+    }
+
+    if (highlightDone) {
+      setAiStatus("Suggested station highlighted on the map.");
+    } else {
+      setAiStatus("AI reply ready.");
+    }
+  } catch (error) {
+    console.error("AI chat failed:", error);
+    appendAiChatMessage("bot", "Sorry, the AI assistant is temporarily unavailable.");
+    renderAiWeatherContext(null);
+    setAiStatus("AI assistant unavailable.");
+  } finally {
+    setAiControlsDisabled(false);
+    const input = document.getElementById("aiChatInput");
+    if (input) input.focus();
+  }
+}
+
+function appendAiChatMessage(role, text) {
+  const box = document.getElementById("aiChatMessages");
+  if (!box) return;
+
+  const messageEl = document.createElement("div");
+  messageEl.className = role === "user"
+    ? "ai-message ai-message-user"
+    : "ai-message ai-message-bot";
+
+  messageEl.textContent = text || "";
+  box.appendChild(messageEl);
+  box.scrollTop = box.scrollHeight;
+}
+
+function setAiControlsDisabled(isDisabled) {
+  const input = document.getElementById("aiChatInput");
+  const button = document.getElementById("aiChatSendBtn");
+
+  if (input) input.disabled = isDisabled;
+  if (button) button.disabled = isDisabled;
+}
+
+function setAiStatus(message) {
+  const statusEl = document.getElementById("aiChatStatus");
+  if (!statusEl) return;
+  statusEl.textContent = message || "";
+}
+
+function renderAiWeatherContext(weather) {
+  const box = document.getElementById("aiWeatherContext");
+  if (!box) return;
+
+  if (!weather) {
+    box.hidden = true;
+    box.innerHTML = "";
+    return;
+  }
+
+  box.hidden = false;
+  box.innerHTML = `
+    <div class="ai-weather-title">Weather context used by AI</div>
+    <div class="ai-weather-grid">
+      <div class="ai-weather-item">
+        <span class="label">Temp</span>
+        <span class="value">${escapeHtml(safeValue(weather.temp))}°C</span>
+      </div>
+      <div class="ai-weather-item">
+        <span class="label">Feels like</span>
+        <span class="value">${escapeHtml(safeValue(weather.feels_like))}°C</span>
+      </div>
+      <div class="ai-weather-item">
+        <span class="label">Condition</span>
+        <span class="value">${escapeHtml(safeValue(weather.weather_main))}</span>
+      </div>
+      <div class="ai-weather-item">
+        <span class="label">Humidity</span>
+        <span class="value">${escapeHtml(safeValue(weather.humidity))}%</span>
+      </div>
+      <div class="ai-weather-item">
+        <span class="label">Wind</span>
+        <span class="value">${escapeHtml(safeValue(weather.wind_speed))} m/s</span>
+      </div>
+      <div class="ai-weather-item">
+        <span class="label">Description</span>
+        <span class="value">${escapeHtml(safeValue(weather.weather_description))}</span>
+      </div>
+    </div>
+  `;
+}
+
+async function tryHighlightAiSelectedStation(selectedStation) {
+  const station = resolveStationFromAi(selectedStation);
+  if (!station) return false;
+
+  const visibleNow = displayedStations.some(
+    (row) => Number(row.station_id) === Number(station.station_id)
+  );
+
+  if (!visibleNow) {
+    displayedStations = [...allStations];
+    const searchInput = document.getElementById("stationSearchInput");
+    if (searchInput) searchInput.value = "";
+    renderMarkers(displayedStations, { fitToBounds: false });
+    updateMapSummary(displayedStations);
+  }
+
+  await selectStation(station.station_id, true);
+
+  if (map && station.latitude != null && station.longitude != null) {
+    map.panTo({
+      lat: Number(station.latitude),
+      lng: Number(station.longitude)
+    });
+    map.setZoom(16);
+  }
+
+  return true;
+}
+
+function resolveStationFromAi(selectedStation) {
+  if (!allStations.length || selectedStation == null) return null;
+
+  const possibleValues = [];
+
+  if (typeof selectedStation === "object") {
+    possibleValues.push(
+      selectedStation.station_id,
+      selectedStation.number,
+      selectedStation.name
+    );
+  } else {
+    possibleValues.push(selectedStation);
+  }
+
+  for (const value of possibleValues) {
+    if (value == null || value === "") continue;
+
+    const asNumber = Number(value);
+    if (!Number.isNaN(asNumber)) {
+      const byId = allStations.find((row) =>
+        Number(row.station_id) === asNumber || Number(row.number) === asNumber
+      );
+      if (byId) return byId;
+    }
+
+    const normalized = String(value).trim().toLowerCase();
+
+    const byExactName = allStations.find((row) =>
+      String(row.name || "").trim().toLowerCase() === normalized
+    );
+    if (byExactName) return byExactName;
+
+    const byPartialName = allStations.find((row) =>
+      String(row.name || "").trim().toLowerCase().includes(normalized)
+    );
+    if (byPartialName) return byPartialName;
+  }
+
+  return null;
+}
+
+/* =========================
+   HELPERS
+========================= */
+
 function getMarkerColor(availableBikes, capacity) {
   if (availableBikes == null || capacity == null || Number(capacity) === 0) {
     return "#6c757d";
@@ -689,4 +1028,13 @@ function roundTo2(value) {
 
 function safeValue(value) {
   return value == null || value === "" ? "N/A" : value;
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
