@@ -4,47 +4,55 @@ import os
 import datetime as dt
 from typing import Any, Dict, List, Optional
 
+from dotenv import load_dotenv
+load_dotenv()
+
 import pymysql
 import requests
-from flask import Flask, jsonify, render_template, request
+import google.generativeai as genai  # 修正：加入 Gemini 套件
+from flask import Flask, jsonify, render_template, request, session
+from werkzeug.security import generate_password_hash, check_password_hash
+
 
 # -----------------------------
 # App
 # -----------------------------
 app = Flask(__name__)
+app.secret_key = os.getenv("FLASK_SECRET_KEY", "dev-secret-key-change-in-production")
+
 
 # -----------------------------
-# Config: OpenWeather 座標
+# Config
 # -----------------------------
 LAT = float(os.getenv("OWM_LAT", "53.3498"))
 LON = float(os.getenv("OWM_LON", "-6.2603"))
 
-# OpenWeather endpoints
-OWM_CURRENT_URL   = "https://api.openweathermap.org/data/2.5/weather"
+OWM_CURRENT_URL = "https://api.openweathermap.org/data/2.5/weather"
 OWM_FORECAST_3H_URL = "https://api.openweathermap.org/data/2.5/forecast"
-
-# JCDecaux endpoint
 STATIONS_URI = "https://api.jcdecaux.com/vls/v1/stations"
 
-# DB table names
 TBL_WEATHER_CURRENT = "weather_current"
-TBL_WEATHER_HOURLY  = "weather_hourly"
-TBL_WEATHER_DAILY   = "weather_daily"
-TBL_STATION         = "station"
-TBL_AVAILABILITY    = "availability"
+TBL_WEATHER_HOURLY = "weather_hourly"
+TBL_WEATHER_DAILY = "weather_daily"
+TBL_STATION = "station"
+TBL_AVAILABILITY = "availability"
+TBL_USERS = "users"
 
 
 # -----------------------------
-# Helpers: API Key 讀取
-# 優先讀環境變數，沒有才 fallback 到 dbinfo.py
+# Helpers
 # -----------------------------
+def dt_to_iso(value: Any) -> Any:
+    if isinstance(value, (dt.datetime, dt.date, dt.time)):
+        return value.isoformat()
+    return value
+
 
 def get_jc_cfg() -> tuple[str, str]:
-    """取得 JCDecaux API key 和 contract name"""
-    api_key  = os.getenv("JCDECAUX_API_KEY")
-    contract = os.getenv("JCDECAUX_CONTRACT")
+    api_key = os.getenv("JCDECAUX_API_KEY")
+    contract = os.getenv("JCDECAUX_CONTRACT", "dublin")
 
-    if api_key and contract:
+    if api_key:
         return api_key, contract
 
     try:
@@ -52,12 +60,11 @@ def get_jc_cfg() -> tuple[str, str]:
         return dbinfo.JCKEY, dbinfo.NAME
     except Exception as e:
         raise RuntimeError(
-            "Missing JCDecaux config. Set JCDECAUX_API_KEY/JCDECAUX_CONTRACT env vars or add JCKEY/NAME to dbinfo.py"
+            "Missing JCDecaux config. Add JCDECAUX_API_KEY to .env or dbinfo.py"
         ) from e
 
 
 def get_owm_key() -> str:
-    """取得 OpenWeather API key"""
     key = os.getenv("OWM_API_KEY")
     if key:
         return key
@@ -70,13 +77,25 @@ def get_owm_key() -> str:
             "Missing OWM config. Set OWM_API_KEY env var or add OWM_API_KEY to dbinfo.py"
         ) from e
 
+# 修正：改為讀取 Gemini Key
+def get_gemini_key() -> str:
+    key = os.getenv("GOOGLE_API_KEY")
+    if key:
+        return key
+    try:
+        import dbinfo  # type: ignore
+        return dbinfo.GOOGLE_API_KEY
+    except Exception as e:
+        raise RuntimeError(
+            "Missing GOOGLE_API_KEY in .env or dbinfo.py"
+        ) from e
+
 
 def get_db_cfg() -> Dict[str, str]:
-    """取得資料庫連線設定"""
     env_user = os.getenv("DB_USER")
     env_pass = os.getenv("DB_PASS")
     env_host = os.getenv("DB_URI")
-    env_port = os.getenv("DB_PORT")
+    env_port = os.getenv("DB_PORT", "3306")
     env_name = os.getenv("DB_NAME")
 
     if all([env_user, env_pass, env_host, env_port, env_name]):
@@ -103,89 +122,6 @@ def get_db_cfg() -> Dict[str, str]:
         ) from e
 
 
-# -----------------------------
-# Helpers: 時間 + JSON
-# -----------------------------
-
-def utcnow_naive() -> dt.datetime:
-    return dt.datetime.now(dt.timezone.utc).replace(tzinfo=None)
-
-
-def dt_to_iso(x: Any) -> Any:
-    if isinstance(x, (dt.datetime, dt.date)):
-        return x.isoformat()
-    return x
-
-
-# -----------------------------
-# Helpers: HTTP
-# -----------------------------
-
-def http_get_json(url: str, params: Dict[str, Any], timeout: int = 10) -> Dict[str, Any]:
-    r = requests.get(url, params=params, timeout=timeout)
-    r.raise_for_status()
-    return r.json()
-
-
-# -----------------------------
-# Helpers: OpenWeather
-# -----------------------------
-
-def fetch_current_live() -> Dict[str, Any]:
-    data = http_get_json(
-        OWM_CURRENT_URL,
-        {"lat": LAT, "lon": LON, "appid": get_owm_key(), "units": "metric"},
-    )
-    return {
-        "temp":                data.get("main", {}).get("temp"),
-        "feels_like":          data.get("main", {}).get("feels_like"),
-        "humidity":            data.get("main", {}).get("humidity"),
-        "pressure":            data.get("main", {}).get("pressure"),
-        "wind_speed":          data.get("wind", {}).get("speed"),
-        "cloudiness":          data.get("clouds", {}).get("all"),
-        "weather_main":        (data.get("weather") or [{}])[0].get("main"),
-        "weather_description": (data.get("weather") or [{}])[0].get("description"),
-        "rain_1h":             (data.get("rain") or {}).get("1h", 0.0),
-        "snow_1h":             (data.get("snow") or {}).get("1h", 0.0),
-    }
-
-
-def fetch_forecast_live_days(max_days: int = 7) -> Dict[str, Any]:
-    data = http_get_json(
-        OWM_FORECAST_3H_URL,
-        {"lat": LAT, "lon": LON, "appid": get_owm_key(), "units": "metric"},
-    )
-
-    daily: Dict[str, Dict[str, Any]] = {}
-    for item in data.get("list", []):
-        dt_txt = item.get("dt_txt")
-        if not dt_txt:
-            continue
-        day  = dt_txt.split(" ")[0]
-        main = item.get("main", {})
-        tmin = main.get("temp_min")
-        tmax = main.get("temp_max")
-        pop  = item.get("pop", 0.0)
-
-        if day not in daily:
-            daily[day] = {"temp_min": tmin, "temp_max": tmax, "pop_max": pop}
-        else:
-            if tmin is not None:
-                daily[day]["temp_min"] = tmin if daily[day]["temp_min"] is None else min(daily[day]["temp_min"], tmin)
-            if tmax is not None:
-                daily[day]["temp_max"] = tmax if daily[day]["temp_max"] is None else max(daily[day]["temp_max"], tmax)
-            daily[day]["pop_max"] = max(float(daily[day]["pop_max"] or 0.0), float(pop or 0.0))
-
-    out: List[Dict[str, Any]] = []
-    for day in sorted(daily.keys())[:max_days]:
-        out.append({"date": day, **daily[day]})
-    return {"days": out}
-
-
-# -----------------------------
-# Helpers: MySQL (read-only)
-# -----------------------------
-
 def get_conn() -> pymysql.connections.Connection:
     cfg = get_db_cfg()
     return pymysql.connect(
@@ -210,42 +146,157 @@ def q(sql: str, params: Optional[tuple] = None) -> List[Dict[str, Any]]:
             return rows
 
 
-# ==============================
-# 頁面路由
-# ==============================
+def exec_sql(sql: str, params: Optional[tuple] = None) -> int:
+    with get_conn() as conn:
+        with conn.cursor() as cur:
+            affected = cur.execute(sql, params or ())
+            return affected
 
+
+def http_get_json(url: str, params: Dict[str, Any]) -> Any:
+    response = requests.get(url, params=params, timeout=20)
+    response.raise_for_status()
+    return response.json()
+
+
+# -----------------------------
+# Live vendor fetchers
+# -----------------------------
+def fetch_current_live() -> Dict[str, Any]:
+    data = http_get_json(
+        OWM_CURRENT_URL,
+        {
+            "lat": LAT,
+            "lon": LON,
+            "appid": get_owm_key(),
+            "units": "metric",
+        },
+    )
+
+    rain = data.get("rain", {}) or {}
+    snow = data.get("snow", {}) or {}
+    weather_list = data.get("weather", []) or [{}]
+    main = data.get("main", {}) or {}
+    wind = data.get("wind", {}) or {}
+    clouds = data.get("clouds", {}) or {}
+
+    return {
+        "temp": main.get("temp"),
+        "feels_like": main.get("feels_like"),
+        "humidity": main.get("humidity"),
+        "pressure": main.get("pressure"),
+        "wind_speed": wind.get("speed"),
+        "cloudiness": clouds.get("all"),
+        "weather_main": weather_list[0].get("main"),
+        "weather_description": weather_list[0].get("description"),
+        "rain_1h": rain.get("1h"),
+        "snow_1h": snow.get("1h"),
+        "source_time": dt.datetime.utcnow().isoformat(),
+    }
+
+
+def fetch_forecast_live_days(max_days: int = 5) -> Dict[str, Any]:
+    raw = http_get_json(
+        OWM_FORECAST_3H_URL,
+        {
+            "lat": LAT,
+            "lon": LON,
+            "appid": get_owm_key(),
+            "units": "metric",
+        },
+    )
+
+    buckets: Dict[str, Dict[str, Any]] = {}
+
+    for item in raw.get("list", []):
+        dt_txt = item.get("dt_txt")
+        if not dt_txt:
+            continue
+
+        date_key = dt_txt[:10]
+        main = item.get("main", {}) or {}
+        pop = item.get("pop", 0) or 0
+
+        if date_key not in buckets:
+            buckets[date_key] = {
+                "date": date_key,
+                "temp_min": main.get("temp_min"),
+                "temp_max": main.get("temp_max"),
+                "pop_max": pop,
+            }
+        else:
+            row = buckets[date_key]
+            if main.get("temp_min") is not None:
+                row["temp_min"] = min(row["temp_min"], main.get("temp_min")) if row["temp_min"] is not None else main.get("temp_min")
+            if main.get("temp_max") is not None:
+                row["temp_max"] = max(row["temp_max"], main.get("temp_max")) if row["temp_max"] is not None else main.get("temp_max")
+            row["pop_max"] = max(row["pop_max"], pop)
+
+    days = list(buckets.values())[:max_days]
+    return {"days": days}
+
+
+# -----------------------------
+# DB init helpers
+# -----------------------------
+def ensure_users_table() -> None:
+    sql = f"""
+    CREATE TABLE IF NOT EXISTS {TBL_USERS} (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        username VARCHAR(100) NOT NULL UNIQUE,
+        password_hash VARCHAR(255) NOT NULL,
+        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )
+    """
+    exec_sql(sql)
+
+
+# -----------------------------
+# Pages
+# -----------------------------
 @app.get("/")
 def home():
     return render_template("index.html")
+
+
+@app.get("/dashboard")
+def dashboard():
+    return render_template(
+        "dashboard.html",
+        google_maps_api_key=os.getenv("GOOGLE_MAPS_API_KEY", "")
+    )
+
+
+@app.get("/weather")
+def weather_page():
+    return render_template("weather.html")
+
 
 @app.get("/sign-in")
 def sign_in():
     return render_template("sign_in.html")
 
-@app.get("/weather")
-def weather_page():
-    return render_template("weather.html")
+
+@app.get("/journey-planner")
+def journey_planner():
+    return render_template("journey_planner.html")
 
 @app.get("/about")
 def about():
     return render_template("about.html")
 
 
-# ==============================
-# API: 健康檢查
-# ==============================
-
+# -----------------------------
+# API: health
+# -----------------------------
 @app.get("/api/ping")
 def ping():
     return jsonify({"ok": True, "message": "pong"})
 
 
-# ==============================
-# API: LIVE — 即時向外部 API 取資料
-# ==============================
-
-# --- Weather ---
-
+# -----------------------------
+# API: live weather
+# -----------------------------
 @app.get("/api/live/weather/current")
 def api_live_weather_current():
     try:
@@ -255,138 +306,273 @@ def api_live_weather_current():
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)}), 500
 
+
 @app.get("/api/live/weather/forecast")
 def api_live_weather_forecast():
     try:
-        max_days = int(request.args.get("days", "7"))
+        max_days = int(request.args.get("days", "5"))
         return jsonify({"ok": True, "source": "openweather", "data": fetch_forecast_live_days(max_days=max_days)})
     except requests.exceptions.HTTPError as e:
         return jsonify({"ok": False, "error": "OpenWeather HTTP error", "detail": str(e)}), 502
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)}), 500
 
-# 向下相容的舊路徑 alias
+
 @app.get("/api/weather/current")
 def api_weather_current_alias():
     return api_live_weather_current()
+
 
 @app.get("/api/weather/forecast")
 def api_weather_forecast_alias():
     return api_live_weather_forecast()
 
 
-# --- Bike (JCDecaux 即時) ---
+# -----------------------------
+# API: bikes from DB
+# -----------------------------
+@app.get("/api/bike/all")
+def api_bike_all():
+    sql = f"""
+        SELECT
+            s.number AS station_id,
+            s.name AS name,
+            s.address AS address,
+            s.position_lat AS latitude,
+            s.position_lng AS longitude,
+            s.banking AS banking,
+            s.bikestands AS station_capacity,
+            COALESCE(a.total_bike_stands, s.bikestands) AS capacity,
+            a.available_bikes AS available_bikes,
+            a.available_bike_stands AS available_bike_stands,
+            a.last_update AS last_update,
+            a.status AS status,
+            a.mechanical_bikes AS mechanical_bikes,
+            a.electrical_bikes AS electrical_bikes,
+            s.bonus AS bonus,
+            s.overflow AS overflow
+        FROM {TBL_STATION} s
+        LEFT JOIN (
+            SELECT a1.*
+            FROM {TBL_AVAILABILITY} a1
+            INNER JOIN (
+                SELECT number, MAX(last_update) AS max_last_update
+                FROM {TBL_AVAILABILITY}
+                GROUP BY number
+            ) latest
+            ON a1.number = latest.number
+            AND a1.last_update = latest.max_last_update
+        ) a
+        ON s.number = a.number
+        ORDER BY s.number ASC
+    """
+    rows = q(sql)
+    return jsonify({"ok": True, "count": len(rows), "rows": rows})
 
-@app.get("/api/live/bike/current")
-@app.route("/api/bike/current")   # 向下相容舊路徑
-def get_bike_data():
+
+@app.get("/api/bike/history")
+def api_bike_history():
+    number = request.args.get("number")
+    if not number:
+        return jsonify({"ok": False, "error": "Missing required query parameter: number"}), 400
+
+    hours = int(request.args.get("hours", "48"))
+
+    sql = f"""
+        SELECT
+            number AS station_id,
+            available_bikes AS available_bikes,
+            available_bike_stands AS available_bike_stands,
+            last_update AS timestamp,
+            status AS status,
+            mechanical_bikes AS mechanical_bikes,
+            electrical_bikes AS electrical_bikes,
+            total_bike_stands AS capacity
+        FROM {TBL_AVAILABILITY}
+        WHERE number = %s
+          AND last_update >= (UTC_TIMESTAMP() - INTERVAL %s HOUR)
+        ORDER BY last_update ASC
+    """
+    rows = q(sql, (int(number), hours))
+
+    return jsonify({
+        "ok": True,
+        "station_id": int(number),
+        "hours": hours,
+        "count": len(rows),
+        "rows": rows
+    })
+
+
+@app.get("/api/db/bikes/hourly_avg/<int:station_id>")
+def api_db_bikes_hourly_avg(station_id: int):
+    hours = int(request.args.get("hours", "48"))
+
+    sql = f"""
+        SELECT
+            number AS station_id,
+            DATE_FORMAT(last_update, '%%Y-%%m-%%d %%H:00:00') AS hour_bucket,
+            AVG(available_bikes) AS avg_bikes,
+            AVG(available_bike_stands) AS avg_stands,
+            AVG(total_bike_stands) AS avg_capacity,
+            COUNT(*) AS sample_count
+        FROM {TBL_AVAILABILITY}
+        WHERE number = %s
+          AND last_update >= (UTC_TIMESTAMP() - INTERVAL %s HOUR)
+        GROUP BY number, DATE_FORMAT(last_update, '%%Y-%%m-%%d %%H:00:00')
+        ORDER BY hour_bucket ASC
+    """
+    rows = q(sql, (station_id, hours))
+    return jsonify({
+        "ok": True,
+        "station_id": station_id,
+        "hours": hours,
+        "count": len(rows),
+        "rows": rows
+    })
+
+
+# -----------------------------
+# API: auth
+# -----------------------------
+@app.post("/api/auth/register")
+def api_auth_register():
     try:
-        api_key, contract = get_jc_cfg()
-        data = http_get_json(STATIONS_URI, {"contract": contract, "apiKey": api_key})
-        return jsonify({"ok": True, "source": "jcdecaux", "data": data})
-    except requests.exceptions.HTTPError as e:
-        return jsonify({"ok": False, "error": "JCDecaux HTTP error", "detail": str(e)}), 502
+        ensure_users_table()
+
+        data = request.get_json(silent=True) or {}
+        username = (data.get("username") or "").strip().lower()
+        password = data.get("password") or ""
+
+        if not username or not password:
+            return jsonify({"ok": False, "error": "Username and password are required."}), 400
+
+        if len(password) < 6:
+            return jsonify({"ok": False, "error": "Password must be at least 6 characters."}), 400
+
+        existing = q(f"SELECT id FROM {TBL_USERS} WHERE username = %s", (username,))
+        if existing:
+            return jsonify({"ok": False, "error": "Username already exists."}), 409
+
+        password_hash = generate_password_hash(password)
+
+        exec_sql(
+            f"INSERT INTO {TBL_USERS} (username, password_hash) VALUES (%s, %s)",
+            (username, password_hash)
+        )
+
+        session["username"] = username
+
+        return jsonify({
+            "ok": True,
+            "message": "Registration successful.",
+            "user": {"username": username}
+        })
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)}), 500
 
 
-# ==============================
-# API: DB — 從資料庫讀歷史資料
-# ==============================
+@app.post("/api/auth/login")
+def api_auth_login():
+    try:
+        ensure_users_table()
 
-# --- Weather DB ---
+        data = request.get_json(silent=True) or {}
+        username = (data.get("username") or "").strip().lower()
+        password = data.get("password") or ""
 
-@app.get("/api/db/weather/current")
-def api_db_weather_current():
-    hours = int(request.args.get("hours", "48"))
-    limit = int(request.args.get("limit", "2000"))
-    sql = f"""
-        SELECT * FROM {TBL_WEATHER_CURRENT}
-        WHERE dt >= (UTC_TIMESTAMP() - INTERVAL %s HOUR)
-        ORDER BY dt DESC LIMIT %s
-    """
-    rows = q(sql, (hours, limit))
-    return jsonify({"ok": True, "source": "db", "hours": hours, "count": len(rows), "rows": rows})
+        if not username or not password:
+            return jsonify({"ok": False, "error": "Username and password are required."}), 400
 
-@app.get("/api/db/weather/hourly")
-def api_db_weather_hourly():
-    hours = int(request.args.get("hours", "48"))
-    limit = int(request.args.get("limit", "3000"))
-    sql = f"""
-        SELECT * FROM {TBL_WEATHER_HOURLY}
-        WHERE dt >= (UTC_TIMESTAMP() - INTERVAL %s HOUR)
-        ORDER BY dt DESC, future_dt DESC LIMIT %s
-    """
-    rows = q(sql, (hours, limit))
-    return jsonify({"ok": True, "source": "db", "hours": hours, "count": len(rows), "rows": rows})
+        rows = q(f"SELECT * FROM {TBL_USERS} WHERE username = %s LIMIT 1", (username,))
+        if not rows:
+            return jsonify({"ok": False, "error": "Invalid username or password."}), 401
 
-@app.get("/api/db/weather/daily")
-def api_db_weather_daily():
-    days  = int(request.args.get("days", "7"))
-    sql = f"""
-        SELECT * FROM {TBL_WEATHER_DAILY}
-        WHERE future_date >= UTC_DATE()
-        ORDER BY future_date ASC LIMIT %s
-    """
-    rows = q(sql, (days,))
-    return jsonify({"ok": True, "source": "db", "days": days, "count": len(rows), "rows": rows})
+        user = rows[0]
+        if not check_password_hash(user["password_hash"], password):
+            return jsonify({"ok": False, "error": "Invalid username or password."}), 401
+
+        session["username"] = username
+
+        return jsonify({
+            "ok": True,
+            "message": "Login successful.",
+            "user": {"username": username}
+        })
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
 
 
-# --- Bike DB ---
-
-@app.get("/api/db/bikes/stations")
-def api_db_stations():
-    limit = int(request.args.get("limit", "200"))
-    sql   = f"SELECT * FROM {TBL_STATION} ORDER BY number ASC LIMIT %s"
-    rows  = q(sql, (limit,))
-    return jsonify({"ok": True, "source": "db", "count": len(rows), "rows": rows})
-
-@app.get("/api/db/bikes/availability")
-def api_db_availability():
-    hours  = int(request.args.get("hours", "48"))
-    limit  = int(request.args.get("limit", "5000"))
-    number = request.args.get("number")
-
-    if number:
-        sql  = f"""
-            SELECT * FROM {TBL_AVAILABILITY}
-            WHERE number = %s
-              AND last_update >= (UTC_TIMESTAMP() - INTERVAL %s HOUR)
-            ORDER BY last_update DESC LIMIT %s
-        """
-        rows = q(sql, (int(number), hours, limit))
-    else:
-        sql  = f"""
-            SELECT * FROM {TBL_AVAILABILITY}
-            WHERE last_update >= (UTC_TIMESTAMP() - INTERVAL %s HOUR)
-            ORDER BY last_update DESC LIMIT %s
-        """
-        rows = q(sql, (hours, limit))
-
-    return jsonify({"ok": True, "source": "db", "hours": hours, "count": len(rows), "rows": rows})
-
-# 向下相容：/api/bike/history/<id> → 等同於 /api/db/bikes/availability?number=<id>&limit=10
-@app.get("/api/bike/history/<int:station_id>")
-def get_bike_history(station_id: int):
-    sql  = f"""
-        SELECT * FROM {TBL_AVAILABILITY}
-        WHERE number = %s
-        ORDER BY last_update DESC LIMIT 10
-    """
-    rows = q(sql, (station_id,))
-    return jsonify({"ok": True, "source": "db", "history": rows})
+@app.post("/api/auth/logout")
+def api_auth_logout():
+    session.pop("username", None)
+    return jsonify({"ok": True, "message": "Logged out."})
 
 
-# ==============================
+@app.get("/api/auth/me")
+def api_auth_me():
+    username = session.get("username")
+    if not username:
+        return jsonify({"ok": True, "authenticated": False, "user": None})
+    return jsonify({
+        "ok": True,
+        "authenticated": True,
+        "user": {"username": username}
+    })
+
+# -----------------------------
+# API: GenAI recommendation (保險加強版)
+# -----------------------------
+@app.post("/api/ai/recommend")
+def api_ai_recommend():
+    try:
+        print("\n--- [DEBUG] AI Route Accessed ---")
+        
+        # 1. 取得 API Key
+        api_key = get_gemini_key()
+        if not api_key:
+            print("ERROR: No Google API Key found!")
+            return jsonify({"ok": False, "error": "API Key is missing"}), 500
+        
+        genai.configure(api_key=api_key)
+        for m in genai.list_models():
+            print(f"可用的模型名稱: {m.name}")
+        
+        data = request.get_json(silent=True) or {}
+        user_question = data.get("question", "Recommend a station.")
+        print(f"DEBUG: Question: {user_question}")
+
+        # 2. 獲取天氣與車站資料 (先用簡單的查詢測試)
+        weather = fetch_current_live()
+        stations = q(f"SELECT s.number, s.name, a.available_bikes FROM {TBL_STATION} s LEFT JOIN {TBL_AVAILABILITY} a ON s.number = a.number LIMIT 5")
+        
+        print("DEBUG: Data fetched successfully. Now calling Gemini...")
+
+        # 3. 呼叫 Gemini (使用最保險的型號名稱)
+        model = genai.GenerativeModel("models/gemini-2.5-flash-lite")        
+        
+        # 組成一個簡單的 Prompt
+        prompt = f"Current weather: {weather}. Here are some bike stations: {stations}. User asks: {user_question}. Please give a short advice."
+        
+        response = model.generate_content(prompt)
+        
+        print("DEBUG: Gemini successfully replied!")
+        
+        return jsonify({
+            "ok": True,
+            "advice": response.text,
+            "weather": weather
+        })
+
+    except Exception as e:
+        print(f"!!! ERROR inside AI route: {str(e)}")
+        import traceback
+        traceback.print_exc() # 這會印出到底是哪一行出錯
+        return jsonify({"ok": False, "error": str(e)}), 500
+
+# -----------------------------
 # Main
-# ==============================
-
+# -----------------------------
 if __name__ == "__main__":
-    #改动1：将默认值从 "127.0.0.1" 改为 "0.0.0.0"
-    host  = os.getenv("FLASK_HOST", "0.0.0.0") 
-    port  = int(os.getenv("FLASK_PORT", "5000"))
-    
-    #2: 在EC2运行时关闭debug(除非在调试)
-    debug = os.getenv("FLASK_DEBUG", "false").lower() in {"1", "true", "yes"}
-    
-    app.run(host=host, port=port, debug=debug)
+    ensure_users_table()
+    app.run(debug=True)
