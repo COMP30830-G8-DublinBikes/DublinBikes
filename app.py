@@ -574,5 +574,4 @@ def api_ai_recommend():
 # Main
 # -----------------------------
 if __name__ == "__main__":
-    ensure_users_table()
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)
