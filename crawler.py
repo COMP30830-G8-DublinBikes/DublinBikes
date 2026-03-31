@@ -146,32 +146,13 @@ def fetch_and_store():
         
         print(f"✅ Fetched {len(stations)} bike stations from JCDecaux API")
         
-        # 3. 連接 Aiven MySQL
-        conn = pymysql.connect(
-            host=db_host,
-            port=db_port,
-            user=db_user,
-            password=db_password,
-            database=db_name,
-            ssl={'ssl': True}
-        )
-        cursor = conn.cursor()
+        # 3. 寫入資料庫
+        stations_to_db(stations)
         
-        # 4. 自動建立資料表（如果不存在）
-        create_table_if_not_exists(cursor)
-        
-        # 5. 存入資料庫
-        cursor.execute(
-            "INSERT INTO bike_data (timestamp, data) VALUES (%s, %s)",
-            (datetime.now(), json.dumps(data, ensure_ascii=False))
-        )
-        
-        conn.commit()
-        print(f" Bike data saved to database at {datetime.now()}")
-        print(f"   Saved {len(data)} stations")
-        
-        cursor.close()
-        conn.close()
+        print(f"✅ Successfully inserted data for {len(stations)} stations")
+        print(f"   Static data → station table")
+        print(f"   Dynamic data → availability table")
+        print(f"   Timestamp: {datetime.datetime.now()}")
         
     except Exception as e:
         print(f"❌ Error: {e}")
