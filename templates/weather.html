@@ -1,0 +1,398 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Weather – G8BikeShare</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    .weather-page {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 24px 20px 56px;
+    }
+
+    .weather-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+      background: rgba(255, 255, 255, 0.95);
+      border: 1px solid #e5e7eb;
+      border-radius: 24px;
+      padding: 16px 20px;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+      margin-bottom: 28px;
+    }
+
+    .weather-brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 14px;
+      text-decoration: none;
+      color: #0f172a;
+      min-width: fit-content;
+    }
+
+    .weather-brand-mark {
+      width: 54px;
+      height: 54px;
+      display: grid;
+      place-items: center;
+      border-radius: 16px;
+      box-shadow: 0 12px 28px rgba(37, 99, 235, 0.18);
+      flex-shrink: 0;
+    }
+
+    .weather-brand-mark svg {
+      width: 54px;
+      height: 54px;
+      display: block;
+    }
+
+    .weather-brand-text {
+      display: flex;
+      flex-direction: column;
+      line-height: 1;
+    }
+
+    .weather-brand-title {
+      font-size: 2rem;
+      font-weight: 900;
+      letter-spacing: -0.04em;
+      color: #0f172a;
+    }
+
+    .weather-brand-accent {
+      color: #2563eb;
+    }
+
+    .weather-brand-subtitle {
+      margin-top: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #64748b;
+      letter-spacing: 0.02em;
+    }
+
+    .weather-nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .weather-btn,
+    .weather-btn-outline {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      padding: 12px 18px;
+      text-decoration: none;
+      font-weight: 800;
+      transition: 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .weather-btn {
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      color: #fff;
+      box-shadow: 0 10px 24px rgba(37, 99, 235, 0.25);
+    }
+
+    .weather-btn:hover {
+      transform: translateY(-1px);
+    }
+
+    .weather-btn-outline {
+      background: #fff;
+      color: #1d4ed8;
+      border: 1px solid #c7d2fe;
+    }
+
+    .weather-btn-outline:hover {
+      background: #eef2ff;
+    }
+
+    .page-head {
+      margin-bottom: 22px;
+    }
+
+    .page-head h1 {
+      margin: 0 0 10px;
+      font-size: 54px;
+      line-height: 1.05;
+      letter-spacing: -0.03em;
+      color: #111827;
+    }
+
+    .page-head p {
+      margin: 0;
+      color: #64748b;
+      font-size: 18px;
+      line-height: 1.7;
+      max-width: 820px;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .summary-card,
+    .chart-card,
+    .note-card {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 24px;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+    }
+
+    .summary-card {
+      padding: 20px;
+    }
+
+    .summary-label {
+      font-size: 13px;
+      color: #64748b;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+
+    .summary-value {
+      font-size: 34px;
+      font-weight: 900;
+      color: #111827;
+      line-height: 1.1;
+      margin-bottom: 8px;
+    }
+
+    .summary-sub {
+      color: #64748b;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .charts-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+
+    .chart-card {
+      padding: 22px;
+    }
+
+    .chart-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+
+    .chart-head h2 {
+      margin: 0 0 6px;
+      font-size: 28px;
+      color: #111827;
+    }
+
+    .chart-head p {
+      margin: 0;
+      color: #64748b;
+      line-height: 1.7;
+    }
+
+    .chart-wrap {
+      position: relative;
+      min-height: 360px;
+    }
+
+    .note-card {
+      margin-top: 20px;
+      padding: 22px;
+    }
+
+    .note-card h3 {
+      margin: 0 0 10px;
+      font-size: 22px;
+      color: #111827;
+    }
+
+    .note-card p {
+      margin: 0;
+      color: #64748b;
+      line-height: 1.8;
+    }
+
+    .error-box {
+      background: #fff7ed;
+      border: 1px solid #fed7aa;
+      color: #9a3412;
+      border-radius: 18px;
+      padding: 16px 18px;
+      margin-bottom: 20px;
+      display: none;
+    }
+
+    @media (max-width: 1080px) {
+      .summary-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 720px) {
+      .summary-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .page-head h1 {
+        font-size: 40px;
+      }
+
+      .chart-wrap {
+        min-height: 300px;
+      }
+
+      .weather-brand-mark,
+      .weather-brand-mark svg {
+        width: 46px;
+        height: 46px;
+      }
+
+      .weather-brand-title {
+        font-size: 1.6rem;
+      }
+
+      .weather-brand-subtitle {
+        font-size: 11px;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .summary-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="weather-page">
+    <nav class="weather-nav">
+      <a class="weather-brand" href="{{ url_for('home') }}" aria-label="G8BikeShare Home">
+        <div class="weather-brand-mark">
+          <svg viewBox="0 0 64 64" aria-hidden="true">
+            <defs>
+              <linearGradient id="g8weathergrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#60a5fa"></stop>
+                <stop offset="100%" stop-color="#1d4ed8"></stop>
+              </linearGradient>
+            </defs>
+            <rect x="4" y="4" width="56" height="56" rx="16" fill="url(#g8weathergrad)"></rect>
+            <circle cx="21" cy="42" r="8" fill="none" stroke="white" stroke-width="3"></circle>
+            <circle cx="43" cy="42" r="8" fill="none" stroke="white" stroke-width="3"></circle>
+            <path d="M21 42 L28 27 L35 42 L43 42" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>
+            <path d="M28 27 H37" fill="none" stroke="white" stroke-width="3" stroke-linecap="round"></path>
+            <path d="M31 20 C25 20,25 29,31 29 C37 29,37 20,31 20 Z" fill="none" stroke="white" stroke-width="2.4"></path>
+            <path d="M39 20 C33 20,33 29,39 29 C45 29,45 20,39 20 Z" fill="none" stroke="white" stroke-width="2.4"></path>
+          </svg>
+        </div>
+        <div class="weather-brand-text">
+          <span class="weather-brand-title"><span class="weather-brand-accent">G8</span>BikeShare</span>
+          <span class="weather-brand-subtitle">Smart Dublin Bike Companion</span>
+        </div>
+      </a>
+
+      <div class="weather-nav-actions">
+        <a class="weather-btn-outline" href="{{ url_for('home') }}">Home</a>
+        <a class="weather-btn-outline" href="{{ url_for('dashboard') }}">Dashboard</a>
+        <a class="weather-btn-outline" href="{{ url_for('about') }}">About</a>
+        <a class="weather-btn" href="{{ url_for('journey_planner') }}">Journey Planner</a>
+      </div>
+    </nav>
+
+    <header class="page-head">
+      <h1>Weather Dashboard</h1>
+      <p>
+        Review live riding conditions and short-term forecast trends before choosing a station
+        or planning a cycling journey across Dublin.
+      </p>
+    </header>
+
+    <div class="error-box" id="weatherError"></div>
+
+    <section class="summary-grid">
+      <div class="summary-card">
+        <div class="summary-label">Current temperature</div>
+        <div class="summary-value" id="summaryTemp">--°C</div>
+        <div class="summary-sub" id="summaryDesc">Loading current condition...</div>
+      </div>
+
+      <div class="summary-card">
+        <div class="summary-label">Feels like</div>
+        <div class="summary-value" id="summaryFeels">--°C</div>
+        <div class="summary-sub">Perceived outdoor temperature</div>
+      </div>
+
+      <div class="summary-card">
+        <div class="summary-label">Humidity</div>
+        <div class="summary-value" id="summaryHumidity">--%</div>
+        <div class="summary-sub">Air moisture right now</div>
+      </div>
+
+      <div class="summary-card">
+        <div class="summary-label">Wind speed</div>
+        <div class="summary-value" id="summaryWind">--</div>
+        <div class="summary-sub">Measured in m/s</div>
+      </div>
+
+      <div class="summary-card">
+        <div class="summary-label">Condition</div>
+        <div class="summary-value" id="summaryMain">--</div>
+        <div class="summary-sub">Useful for ride planning</div>
+      </div>
+    </section>
+
+    <section class="charts-grid">
+      <article class="chart-card">
+        <div class="chart-head">
+          <div>
+            <h2>Forecast temperature trend</h2>
+            <p>Minimum and maximum forecast temperatures by day.</p>
+          </div>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="tempChart"></canvas>
+        </div>
+      </article>
+
+      <article class="chart-card">
+        <div class="chart-head">
+          <div>
+            <h2>Precipitation probability</h2>
+            <p>Maximum precipitation probability for each forecast day.</p>
+          </div>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="popChart"></canvas>
+        </div>
+      </article>
+    </section>
+
+    <section class="note-card">
+      <h3>Ride planning note</h3>
+      <p id="rideNote">
+        Loading a quick interpretation of today’s weather and the upcoming forecast.
+      </p>
+    </section>
+  </div>
+
+  <script src="{{ url_for('static', filename='weather.js') }}"></script>
+</body>
+</html>
