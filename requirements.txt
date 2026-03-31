@@ -6,3 +6,4 @@ Werkzeug
 python-dotenv
 google-generativeai
 gunicorn
+sqlalchemy
