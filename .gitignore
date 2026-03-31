@@ -1,0 +1,21 @@
+# Credentials / local config
+dbinfo.py
+.env
+
+# Python virtualenv
+.venv/
+venv/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Local data & logs
+data/
+*.log
+
+# OS / editor
+.DS_Store
+.vscode/

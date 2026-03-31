@@ -1,4 +1,9 @@
+Flask
 requests
-pymysql
+PyMySQL
 cryptography
+Werkzeug
+python-dotenv
+google-generativeai
+gunicorn
 sqlalchemy

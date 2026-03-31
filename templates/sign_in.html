@@ -1,0 +1,735 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Account – G8BikeShare</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+  <style>
+    .auth-page {
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at top right, rgba(59, 130, 246, 0.10), transparent 28%),
+        radial-gradient(circle at left center, rgba(37, 99, 235, 0.08), transparent 22%),
+        #f5f7fb;
+    }
+
+    .auth-shell {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 24px 20px 56px;
+    }
+
+    .auth-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+      background: rgba(255, 255, 255, 0.95);
+      border: 1px solid #e5e7eb;
+      border-radius: 24px;
+      padding: 16px 20px;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+      margin-bottom: 28px;
+    }
+
+    .auth-brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 14px;
+      text-decoration: none;
+      color: #0f172a;
+      min-width: fit-content;
+    }
+
+    .auth-brand-mark {
+      width: 54px;
+      height: 54px;
+      display: grid;
+      place-items: center;
+      border-radius: 16px;
+      box-shadow: 0 12px 28px rgba(37, 99, 235, 0.18);
+      flex-shrink: 0;
+    }
+
+    .auth-brand-mark svg {
+      width: 54px;
+      height: 54px;
+      display: block;
+    }
+
+    .auth-brand-text {
+      display: flex;
+      flex-direction: column;
+      line-height: 1;
+    }
+
+    .auth-brand-title {
+      font-size: 2rem;
+      font-weight: 900;
+      letter-spacing: -0.04em;
+      color: #0f172a;
+    }
+
+    .auth-brand-accent {
+      color: #2563eb;
+    }
+
+    .auth-brand-subtitle {
+      margin-top: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #64748b;
+      letter-spacing: 0.02em;
+    }
+
+    .auth-nav-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .auth-btn,
+    .auth-btn-outline {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      padding: 12px 18px;
+      font-weight: 800;
+      text-decoration: none;
+      transition: 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .auth-btn {
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      color: #fff;
+      box-shadow: 0 10px 24px rgba(37, 99, 235, 0.25);
+    }
+
+    .auth-btn-outline {
+      background: #fff;
+      color: #1d4ed8;
+      border: 1px solid #c7d2fe;
+    }
+
+    .auth-btn:hover,
+    .auth-btn-outline:hover {
+      transform: translateY(-1px);
+    }
+
+    .auth-layout {
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    .auth-info,
+    .auth-card,
+    .session-card {
+      background: rgba(255, 255, 255, 0.96);
+      border: 1px solid #e5e7eb;
+      border-radius: 28px;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+    }
+
+    .auth-info {
+      padding: 34px;
+    }
+
+    .auth-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #e0e7ff;
+      color: #1d4ed8;
+      border-radius: 999px;
+      padding: 8px 14px;
+      font-size: 13px;
+      font-weight: 800;
+      margin-bottom: 16px;
+    }
+
+    .auth-info h1 {
+      margin: 0 0 16px;
+      font-size: clamp(38px, 6vw, 64px);
+      line-height: 1.02;
+      letter-spacing: -0.03em;
+      color: #111827;
+    }
+
+    .auth-info p {
+      margin: 0 0 24px;
+      color: #64748b;
+      font-size: 18px;
+      line-height: 1.8;
+      max-width: 640px;
+    }
+
+    .auth-feature-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 18px;
+    }
+
+    .auth-feature {
+      background: #f8fafc;
+      border: 1px solid #e5e7eb;
+      border-radius: 20px;
+      padding: 18px;
+    }
+
+    .auth-feature h3 {
+      margin: 0 0 8px;
+      font-size: 20px;
+      color: #111827;
+    }
+
+    .auth-feature p {
+      margin: 0;
+      font-size: 15px;
+      color: #64748b;
+      line-height: 1.7;
+    }
+
+    .auth-right {
+      display: grid;
+      gap: 20px;
+    }
+
+    .auth-card {
+      padding: 28px;
+    }
+
+    .auth-switch {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      background: #f8fafc;
+      border: 1px solid #e5e7eb;
+      border-radius: 18px;
+      padding: 8px;
+      margin-bottom: 20px;
+    }
+
+    .auth-switch button {
+      border: none;
+      background: transparent;
+      border-radius: 14px;
+      padding: 12px 16px;
+      font-size: 15px;
+      font-weight: 800;
+      cursor: pointer;
+      color: #64748b;
+      transition: 0.2s ease;
+    }
+
+    .auth-switch button.active {
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      color: #fff;
+      box-shadow: 0 10px 24px rgba(37, 99, 235, 0.18);
+    }
+
+    .auth-card h2 {
+      margin: 0 0 8px;
+      font-size: 30px;
+      color: #111827;
+    }
+
+    .auth-card .subtext {
+      margin: 0 0 22px;
+      color: #64748b;
+      line-height: 1.7;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      color: #475569;
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 14px 16px;
+      border-radius: 16px;
+      border: 1px solid #d1d5db;
+      font-size: 15px;
+      outline: none;
+      transition: 0.2s ease;
+      box-sizing: border-box;
+    }
+
+    .form-group input:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.10);
+    }
+
+    .hint {
+      margin-top: 8px;
+      color: #64748b;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .primary-submit,
+    .secondary-btn {
+      width: 100%;
+      border: none;
+      border-radius: 18px;
+      padding: 14px 18px;
+      font-size: 16px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: 0.2s ease;
+    }
+
+    .primary-submit {
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      color: #fff;
+      box-shadow: 0 10px 24px rgba(37, 99, 235, 0.25);
+      margin-top: 8px;
+    }
+
+    .secondary-btn {
+      background: #eef2ff;
+      color: #1d4ed8;
+      margin-top: 12px;
+    }
+
+    .primary-submit:hover,
+    .secondary-btn:hover {
+      transform: translateY(-1px);
+    }
+
+    .message-box {
+      display: none;
+      margin-top: 16px;
+      padding: 14px 16px;
+      border-radius: 16px;
+      font-size: 14px;
+      line-height: 1.6;
+      border: 1px solid transparent;
+    }
+
+    .message-box.success {
+      display: block;
+      background: #f0fdf4;
+      color: #166534;
+      border-color: #bbf7d0;
+    }
+
+    .message-box.error {
+      display: block;
+      background: #fef2f2;
+      color: #991b1b;
+      border-color: #fecaca;
+    }
+
+    .session-card {
+      padding: 24px;
+    }
+
+    .session-card h3 {
+      margin: 0 0 12px;
+      font-size: 24px;
+      color: #111827;
+    }
+
+    .session-row {
+      margin-bottom: 12px;
+      color: #64748b;
+      line-height: 1.7;
+    }
+
+    .session-user {
+      font-weight: 800;
+      color: #111827;
+    }
+
+    .session-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-size: 13px;
+      font-weight: 800;
+      margin-bottom: 14px;
+    }
+
+    .session-status.signed-in {
+      background: #dcfce7;
+      color: #166534;
+    }
+
+    .session-status.guest {
+      background: #f1f5f9;
+      color: #475569;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    @media (max-width: 980px) {
+      .auth-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .auth-feature-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .auth-card,
+      .auth-info,
+      .session-card {
+        border-radius: 22px;
+      }
+
+      .auth-info {
+        padding: 24px;
+      }
+
+      .auth-card {
+        padding: 22px;
+      }
+
+      .auth-brand-mark,
+      .auth-brand-mark svg {
+        width: 46px;
+        height: 46px;
+      }
+
+      .auth-brand-title {
+        font-size: 1.6rem;
+      }
+
+      .auth-brand-subtitle {
+        font-size: 11px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="auth-page">
+    <div class="auth-shell">
+      <nav class="auth-nav">
+        <a class="auth-brand" href="{{ url_for('home') }}" aria-label="G8BikeShare Home">
+          <div class="auth-brand-mark">
+            <svg viewBox="0 0 64 64" aria-hidden="true">
+              <defs>
+                <linearGradient id="g8authgrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#60a5fa"></stop>
+                  <stop offset="100%" stop-color="#1d4ed8"></stop>
+                </linearGradient>
+              </defs>
+              <rect x="4" y="4" width="56" height="56" rx="16" fill="url(#g8authgrad)"></rect>
+              <circle cx="21" cy="42" r="8" fill="none" stroke="white" stroke-width="3"></circle>
+              <circle cx="43" cy="42" r="8" fill="none" stroke="white" stroke-width="3"></circle>
+              <path d="M21 42 L28 27 L35 42 L43 42" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>
+              <path d="M28 27 H37" fill="none" stroke="white" stroke-width="3" stroke-linecap="round"></path>
+              <path d="M31 20 C25 20,25 29,31 29 C37 29,37 20,31 20 Z" fill="none" stroke="white" stroke-width="2.4"></path>
+              <path d="M39 20 C33 20,33 29,39 29 C45 29,45 20,39 20 Z" fill="none" stroke="white" stroke-width="2.4"></path>
+            </svg>
+          </div>
+          <div class="auth-brand-text">
+            <span class="auth-brand-title"><span class="auth-brand-accent">G8</span>BikeShare</span>
+            <span class="auth-brand-subtitle">Smart Dublin Bike Companion</span>
+          </div>
+        </a>
+
+        <div class="auth-nav-actions">
+          <a class="auth-btn-outline" href="{{ url_for('home') }}">Home</a>
+          <a class="auth-btn-outline" href="{{ url_for('dashboard') }}">Dashboard</a>
+          <a class="auth-btn-outline" href="{{ url_for('about') }}">About</a>
+          <a class="auth-btn" href="{{ url_for('journey_planner') }}">Journey Planner</a>
+        </div>
+      </nav>
+
+      <div class="auth-layout">
+        <section class="auth-info">
+          <div class="auth-pill">Account access • Login and registration</div>
+          <h1>Sign in to keep your bike journey flow simple.</h1>
+          <p>
+            Create an account or sign in to continue using G8BikeShare as a returning user.
+            This keeps the project closer to a real product flow instead of a static demo page.
+          </p>
+
+          <div class="auth-feature-grid">
+            <div class="auth-feature">
+              <h3>Real login flow</h3>
+              <p>Connects directly to your Flask authentication API instead of using a placeholder form.</p>
+            </div>
+            <div class="auth-feature">
+              <h3>Register new users</h3>
+              <p>Allows a first-time user to create an account with a username and password.</p>
+            </div>
+            <div class="auth-feature">
+              <h3>Session status</h3>
+              <p>Displays whether a user is currently signed in and which username is active.</p>
+            </div>
+            <div class="auth-feature">
+              <h3>Clean demo flow</h3>
+              <p>After login or registration, the page can redirect users into the live dashboard.</p>
+            </div>
+          </div>
+        </section>
+
+        <div class="auth-right">
+          <section class="auth-card">
+            <div class="auth-switch">
+              <button id="modeLoginBtn" class="active" type="button">Sign in</button>
+              <button id="modeRegisterBtn" type="button">Register</button>
+            </div>
+
+            <h2 id="formTitle">Sign in</h2>
+            <p class="subtext" id="formSubtitle">
+              Enter your username and password to sign in.
+            </p>
+
+            <form id="authForm">
+              <div class="form-group">
+                <label for="usernameInput">Username</label>
+                <input id="usernameInput" name="username" type="text" placeholder="e.g. hardy" required />
+                <div class="hint">This matches the backend API, which uses username rather than email.</div>
+              </div>
+
+              <div class="form-group">
+                <label for="passwordInput">Password</label>
+                <input id="passwordInput" name="password" type="password" placeholder="At least 6 characters" required />
+              </div>
+
+              <div class="form-group hidden" id="confirmPasswordGroup">
+                <label for="confirmPasswordInput">Confirm password</label>
+                <input id="confirmPasswordInput" type="password" placeholder="Repeat your password" />
+              </div>
+
+              <button class="primary-submit" id="submitBtn" type="submit">Sign in</button>
+            </form>
+
+            <div id="messageBox" class="message-box"></div>
+          </section>
+
+          <section class="session-card">
+            <h3>Current session</h3>
+            <div id="sessionStatus" class="session-status guest">Guest session</div>
+            <div class="session-row" id="sessionText">
+              No user is currently signed in.
+            </div>
+            <button id="logoutBtn" class="secondary-btn hidden" type="button">Log out</button>
+          </section>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentMode = "login";
+
+    const modeLoginBtn = document.getElementById("modeLoginBtn");
+    const modeRegisterBtn = document.getElementById("modeRegisterBtn");
+
+    const formTitle = document.getElementById("formTitle");
+    const formSubtitle = document.getElementById("formSubtitle");
+    const authForm = document.getElementById("authForm");
+    const submitBtn = document.getElementById("submitBtn");
+
+    const usernameInput = document.getElementById("usernameInput");
+    const passwordInput = document.getElementById("passwordInput");
+    const confirmPasswordGroup = document.getElementById("confirmPasswordGroup");
+    const confirmPasswordInput = document.getElementById("confirmPasswordInput");
+
+    const messageBox = document.getElementById("messageBox");
+
+    const sessionStatus = document.getElementById("sessionStatus");
+    const sessionText = document.getElementById("sessionText");
+    const logoutBtn = document.getElementById("logoutBtn");
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      setupModeSwitch();
+      setupFormSubmit();
+      setupLogout();
+      await refreshSession();
+    });
+
+    function setupModeSwitch() {
+      modeLoginBtn.addEventListener("click", () => setMode("login"));
+      modeRegisterBtn.addEventListener("click", () => setMode("register"));
+    }
+
+    function setMode(mode) {
+      currentMode = mode;
+      clearMessage();
+
+      if (mode === "login") {
+        modeLoginBtn.classList.add("active");
+        modeRegisterBtn.classList.remove("active");
+        formTitle.textContent = "Sign in";
+        formSubtitle.textContent = "Enter your username and password to sign in.";
+        submitBtn.textContent = "Sign in";
+        confirmPasswordGroup.classList.add("hidden");
+        confirmPasswordInput.value = "";
+      } else {
+        modeRegisterBtn.classList.add("active");
+        modeLoginBtn.classList.remove("active");
+        formTitle.textContent = "Register";
+        formSubtitle.textContent = "Create a new account using a username and password.";
+        submitBtn.textContent = "Create account";
+        confirmPasswordGroup.classList.remove("hidden");
+      }
+    }
+
+    function setupFormSubmit() {
+      authForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        clearMessage();
+
+        const username = usernameInput.value.trim();
+        const password = passwordInput.value;
+        const confirmPassword = confirmPasswordInput.value;
+
+        if (!username || !password) {
+          showMessage("Please enter both username and password.", "error");
+          return;
+        }
+
+        if (currentMode === "register") {
+          if (password.length < 6) {
+            showMessage("Password must be at least 6 characters long.", "error");
+            return;
+          }
+
+          if (password !== confirmPassword) {
+            showMessage("Passwords do not match.", "error");
+            return;
+          }
+        }
+
+        const endpoint = currentMode === "login"
+          ? "/api/auth/login"
+          : "/api/auth/register";
+
+        try {
+          submitBtn.disabled = true;
+          submitBtn.textContent = currentMode === "login" ? "Signing in..." : "Creating account...";
+
+          const response = await fetch(endpoint, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ username, password })
+          });
+
+          const result = await response.json();
+
+          if (!result.ok) {
+            showMessage(result.error || "Authentication failed.", "error");
+            return;
+          }
+
+          showMessage(result.message || "Success.", "success");
+          authForm.reset();
+
+          if (currentMode === "register") {
+            confirmPasswordGroup.classList.remove("hidden");
+          }
+
+          await refreshSession();
+
+          setTimeout(() => {
+            window.location.href = "/dashboard";
+          }, 900);
+        } catch (error) {
+          console.error("Auth request failed:", error);
+          showMessage("Request failed. Please try again.", "error");
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.textContent = currentMode === "login" ? "Sign in" : "Create account";
+        }
+      });
+    }
+
+    function setupLogout() {
+      logoutBtn.addEventListener("click", async () => {
+        clearMessage();
+
+        try {
+          const response = await fetch("/api/auth/logout", {
+            method: "POST"
+          });
+          const result = await response.json();
+
+          if (!result.ok) {
+            showMessage(result.error || "Logout failed.", "error");
+            return;
+          }
+
+          showMessage("Logged out successfully.", "success");
+          await refreshSession();
+          setMode("login");
+        } catch (error) {
+          console.error("Logout failed:", error);
+          showMessage("Logout request failed.", "error");
+        }
+      });
+    }
+
+    async function refreshSession() {
+      try {
+        const response = await fetch("/api/auth/me");
+        const result = await response.json();
+
+        if (result.authenticated && result.user) {
+          sessionStatus.textContent = "Signed in";
+          sessionStatus.className = "session-status signed-in";
+          sessionText.innerHTML = `Current user: <span class="session-user">${escapeHtml(result.user.username)}</span>`;
+          logoutBtn.classList.remove("hidden");
+        } else {
+          sessionStatus.textContent = "Guest session";
+          sessionStatus.className = "session-status guest";
+          sessionText.textContent = "No user is currently signed in.";
+          logoutBtn.classList.add("hidden");
+        }
+      } catch (error) {
+        console.error("Failed to refresh session:", error);
+        sessionStatus.textContent = "Unknown";
+        sessionStatus.className = "session-status guest";
+        sessionText.textContent = "Could not load current session state.";
+        logoutBtn.classList.add("hidden");
+      }
+    }
+
+    function showMessage(message, type) {
+      messageBox.textContent = message;
+      messageBox.className = `message-box ${type}`;
+    }
+
+    function clearMessage() {
+      messageBox.textContent = "";
+      messageBox.className = "message-box";
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+  </script>
+</body>
+</html>
