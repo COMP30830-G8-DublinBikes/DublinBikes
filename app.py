@@ -3,6 +3,8 @@ from __future__ import annotations
 import os
 import re
 import datetime as dt
+import time
+
 from typing import Any, Dict, List, Optional
 
 from dotenv import load_dotenv
@@ -26,7 +28,12 @@ app.config.update(
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE="Lax",
 )
-
+with app.app_context():
+    try:
+        ensure_users_table()
+        print("✅ Database initialized successfully.")
+    except Exception as e:
+        print(f"❌ DB Init Error: {e}")
 
 # -----------------------------
 # Config
@@ -385,15 +392,7 @@ def ensure_users_table() -> None:
     """
     exec_sql(sql)
 
-# -----------------------------
-# App Initialization (EC2 生产环境必备)
-# -----------------------------
-with app.app_context():
-    try:
-        ensure_users_table()
-        print("✅ Database connection and users table verified.")
-    except Exception as e:
-        print(f"❌ Database initialization failed: {e}")
+
 # -----------------------------
 # Pages
 # -----------------------------
@@ -847,7 +846,7 @@ def api_ai_chat():
             except Exception:
                 selected_station = None
 
-        top_stations = get_top_station_snapshots(limit=8)
+        top_stations = get_top_station_snapshots(limit=4)
 
         compact_history_lines = []
         if isinstance(history, list):
@@ -886,27 +885,12 @@ def api_ai_chat():
         top_station_block = "\n".join(top_station_lines) if top_station_lines else "No station snapshot available."
 
         prompt = f"""
-You are G8BikeShare AI, a helpful assistant for a Dublin bike-sharing web application.
+You are G8BikeShare AI. Answer in 2-3 sentences max. Be helpful and natural, but concise.
+- Always recommend stations by name with bike count.
+- Mention weather only if it affects cycling (rain or under 8°C).
+- No long introductions or filler words.
 
-Your job:
-- Help users find good stations for borrowing or returning bikes.
-- Use the provided live weather and station availability data.
-- Answer questions about ride conditions, bike availability, dock availability, and how to use the service.
-- If the user asks for a journey or route, suggest using the Journey Planner or Google Maps directions.
-- Keep answers practical, concise, and user-friendly.
-- Do not invent unavailable data.
-- If data is missing, say so clearly.
-- When recommending a station, mention its station name clearly in the reply.
-
-Current weather:
-- Temperature: {weather.get('temp')} °C
-- Feels like: {weather.get('feels_like')} °C
-- Humidity: {weather.get('humidity')} %
-- Wind speed: {weather.get('wind_speed')} m/s
-- Main condition: {weather.get('weather_main')}
-- Description: {weather.get('weather_description')}
-- Rain 1h: {weather.get('rain_1h')}
-- Snow 1h: {weather.get('snow_1h')}
+Current weather: {weather.get('weather_description')}, {weather.get('temp')}°C, rain={weather.get('rain_1h') or 0}mm
 
 {selected_station_block}
 
@@ -919,13 +903,25 @@ Recent chat history:
 User question:
 {message}
 
-Please answer in clear English. Keep the answer grounded in the data above and focused on G8BikeShare service information.
 """.strip()
+
+        # 改後
 
         model_name = get_gemini_model_name()
         model = genai.GenerativeModel(model_name)
-        response = model.generate_content(prompt)
 
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                response = model.generate_content(prompt)
+                break
+            except Exception as e:
+                err_str = str(e).lower()
+                if "429" in err_str or "quota" in err_str or "resource" in err_str:
+                    if attempt < max_retries - 1:
+                        time.sleep(10)
+                        continue
+                raise
         try:
             reply_text = response.text.strip()
         except Exception:
@@ -953,4 +949,7 @@ Please answer in clear English. Keep the answer grounded in the data above and f
 # -----------------------------
 if __name__ == "__main__":
     debug_mode = os.getenv("FLASK_DEBUG", "1") == "1"
-    app.run(host="0.0.0.0", port=5000, debug=debug_mode)
+    host = os.getenv("FLASK_RUN_HOST", "0.0.0.0") # 建议改 0.0.0.0 方便测试
+    port = int(os.getenv("PORT", "5000"))
+
+    app.run(host=host, port=port, debug=debug_mode)
