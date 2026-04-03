@@ -6,870 +6,755 @@
   <title>G8BikeShare – Dublin Bike Finder</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
   <style>
-    .home-page {
-      min-height: 100vh;
-      background:
-        radial-gradient(circle at top right, rgba(59, 130, 246, 0.10), transparent 28%),
-        radial-gradient(circle at left center, rgba(37, 99, 235, 0.08), transparent 22%),
-        #f5f7fb;
-      color: #1f2937;
+    :root {
+      --brand: #1849a9;
+      --brand-light: #e8f0fe;
+      --brand-mid: #7eb3ff;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      background: #f5f7fb;
+      color: #111827;
     }
 
     .home-shell {
       max-width: 1200px;
       margin: 0 auto;
-      padding: 24px 20px 56px;
+      padding: 20px 20px 56px;
     }
 
+    /* ── NAV ── */
     .home-nav {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 16px;
-      background: rgba(255, 255, 255, 0.95);
-      border: 1px solid #e5e7eb;
-      border-radius: 24px;
-      padding: 16px 20px;
-      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
-      position: sticky;
-      top: 16px;
-      z-index: 20;
-      backdrop-filter: blur(10px);
+      gap: 12px;
       flex-wrap: wrap;
+      background: rgba(255,255,255,0.97);
+      border: 1px solid #e5e7eb;
+      border-radius: 18px;
+      padding: 14px 20px;
+      box-shadow: 0 4px 20px rgba(15,23,42,0.06);
+      position: sticky;
+      top: 12px;
+      z-index: 30;
+      backdrop-filter: blur(12px);
     }
 
     .home-brand {
       display: inline-flex;
       align-items: center;
-      gap: 14px;
+      gap: 10px;
       text-decoration: none;
-      color: #0f172a;
-      min-width: fit-content;
+      color: #111827;
     }
 
     .home-brand-mark {
-      width: 54px;
-      height: 54px;
+      width: 38px;
+      height: 38px;
+      background: var(--brand);
+      border-radius: 10px;
       display: grid;
       place-items: center;
-      border-radius: 16px;
-      box-shadow: 0 12px 28px rgba(37, 99, 235, 0.18);
       flex-shrink: 0;
+      box-shadow: 0 4px 12px rgba(24,73,169,0.3);
     }
 
-    .home-brand-mark svg {
-      width: 54px;
-      height: 54px;
-      display: block;
-    }
-
-    .home-brand-text {
-      display: flex;
-      flex-direction: column;
-      line-height: 1;
-    }
+    .home-brand-mark svg { width: 22px; height: 22px; display: block; }
 
     .home-brand-title {
-      font-size: 2rem;
-      font-weight: 900;
-      letter-spacing: -0.04em;
-      color: #0f172a;
-    }
-
-    .home-brand-accent {
-      color: #2563eb;
-    }
-
-    .home-brand-subtitle {
-      margin-top: 6px;
-      font-size: 12px;
+      font-size: 1.2rem;
       font-weight: 700;
-      color: #64748b;
-      letter-spacing: 0.02em;
+      letter-spacing: -0.03em;
+      color: #111827;
     }
+
+    .home-brand-accent { color: var(--brand); }
 
     .home-links {
       display: flex;
       align-items: center;
-      gap: 14px;
-      flex-wrap: wrap;
+      gap: 2px;
     }
 
     .home-links a {
       text-decoration: none;
-      color: #475569;
-      font-weight: 700;
-      padding: 10px 14px;
-      border-radius: 999px;
-      transition: 0.2s ease;
-    }
-
-    .home-links a:hover {
-      background: #eef2ff;
-      color: #1d4ed8;
-    }
-
-    .home-nav-actions {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
-    .home-btn,
-    .home-btn-outline {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      border-radius: 999px;
-      padding: 12px 18px;
-      font-weight: 800;
-      text-decoration: none;
-      transition: 0.2s ease;
-      white-space: nowrap;
-    }
-
-    .home-btn {
-      background: linear-gradient(135deg, #2563eb, #1d4ed8);
-      color: #fff;
-      border: none;
-      box-shadow: 0 10px 24px rgba(37, 99, 235, 0.25);
-    }
-
-    .home-btn:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 14px 28px rgba(37, 99, 235, 0.30);
-    }
-
-    .home-btn-outline {
-      background: #fff;
-      color: #1d4ed8;
-      border: 1px solid #c7d2fe;
-    }
-
-    .home-btn-outline:hover {
-      background: #eef2ff;
-    }
-
-    .hero {
-      display: grid;
-      grid-template-columns: 1.2fr 0.9fr;
-      gap: 28px;
-      align-items: stretch;
-      margin-top: 28px;
-    }
-
-    .hero-copy,
-    .hero-panel,
-    .stats-panel,
-    .feature-card,
-    .steps-card,
-    .cta-banner {
-      background: rgba(255, 255, 255, 0.96);
-      border: 1px solid #e5e7eb;
-      border-radius: 28px;
-      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
-    }
-
-    .hero-copy {
-      padding: 36px;
-    }
-
-    .eyebrow {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      background: #e0e7ff;
-      color: #1d4ed8;
-      border-radius: 999px;
-      padding: 8px 14px;
-      font-size: 13px;
-      font-weight: 800;
-      margin-bottom: 16px;
-    }
-
-    .hero-copy h1 {
-      font-size: clamp(38px, 6vw, 68px);
-      line-height: 1.02;
-      letter-spacing: -0.03em;
-      margin: 0 0 16px;
-      color: #111827;
-    }
-
-    .hero-copy p {
-      font-size: 18px;
-      line-height: 1.7;
-      color: #64748b;
-      margin: 0 0 24px;
-      max-width: 700px;
-    }
-
-    .hero-actions {
-      display: flex;
-      gap: 14px;
-      flex-wrap: wrap;
-      margin-bottom: 22px;
-    }
-
-    .hero-highlights {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 14px;
-      margin-top: 20px;
-    }
-
-    .hero-highlight {
-      background: #f8fafc;
-      border: 1px solid #e5e7eb;
-      border-radius: 18px;
-      padding: 16px;
-    }
-
-    .hero-highlight strong {
-      display: block;
-      font-size: 22px;
-      color: #111827;
-      margin-bottom: 6px;
-    }
-
-    .hero-highlight span {
       color: #64748b;
       font-size: 14px;
+      font-weight: 600;
+      padding: 7px 13px;
+      border-radius: 999px;
+      transition: 0.15s ease;
     }
 
-    .hero-panel {
-      padding: 26px;
+    .home-links a:hover { background: #f1f5f9; color: #111827; }
+    .home-links a.active { background: var(--brand-light); color: var(--brand); }
+
+    .nav-weather-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--brand-light);
+      color: var(--brand);
+      font-size: 13px;
+      font-weight: 600;
+      padding: 7px 14px;
+      border-radius: 999px;
+    }
+
+    .nav-actions { display: flex; align-items: center; gap: 8px; }
+
+    .btn-nav-outline {
+      font-size: 13px;
+      font-weight: 700;
+      padding: 8px 16px;
+      border-radius: 10px;
+      border: 1px solid #e5e7eb;
+      background: #fff;
+      color: #374151;
+      text-decoration: none;
+      transition: 0.15s ease;
+    }
+
+    .btn-nav-outline:hover { background: #f9fafb; }
+
+    .btn-nav-primary {
+      font-size: 13px;
+      font-weight: 700;
+      padding: 8px 18px;
+      border-radius: 10px;
+      background: var(--brand);
+      color: #fff;
+      text-decoration: none;
+      transition: 0.15s ease;
+      box-shadow: 0 4px 12px rgba(24,73,169,0.25);
+    }
+
+    .btn-nav-primary:hover { background: #1540c0; }
+
+    /* ── HERO ── */
+    .hero {
+      margin-top: 20px;
+      border-radius: 24px;
+      overflow: hidden;
+      position: relative;
+      min-height: 420px;
       display: flex;
       flex-direction: column;
-      gap: 18px;
-      justify-content: space-between;
+      justify-content: flex-end;
     }
 
-    .hero-panel-top h2 {
-      margin: 0 0 10px;
-      font-size: 28px;
-      color: #111827;
+    /* Background photo — swap this with your real image */
+    .hero-bg-photo {
+      position: absolute;
+      inset: 0;
+      background-image: url('/static/img/hero-dublin-bike.jpg');
+      background-size: cover;
+      background-position: center 60%;
+      background-color: #2a5298; /* fallback color if image missing */
     }
 
-    .hero-panel-top p {
+    /* Gradient overlay — dark at bottom for text readability */
+    .hero-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        to top,
+        rgba(8, 20, 55, 0.90) 0%,
+        rgba(8, 20, 55, 0.60) 45%,
+        rgba(8, 20, 55, 0.20) 100%
+      );
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      padding: 36px 40px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.22);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 6px 14px;
+      border-radius: 999px;
+      width: fit-content;
+    }
+
+    .hero-eyebrow-dot {
+      width: 6px;
+      height: 6px;
+      background: #7eb3ff;
+      border-radius: 50%;
+    }
+
+    .hero-h1 {
+      font-size: clamp(32px, 5vw, 52px);
+      font-weight: 700;
+      color: #fff;
+      line-height: 1.05;
+      letter-spacing: -0.04em;
+      max-width: 560px;
       margin: 0;
-      color: #64748b;
-      line-height: 1.7;
     }
 
-    .mini-status-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
+    .hero-h1 span { color: var(--brand-mid); }
+
+    .hero-sub {
+      font-size: 16px;
+      color: rgba(255,255,255,0.75);
+      line-height: 1.65;
+      max-width: 480px;
+      margin: 0;
+    }
+
+    .hero-btns { display: flex; gap: 12px; flex-wrap: wrap; }
+
+    .btn-hero-primary {
+      background: #fff;
+      color: var(--brand);
+      font-size: 14px;
+      font-weight: 700;
+      padding: 12px 24px;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
+      transition: 0.15s ease;
+    }
+
+    .btn-hero-primary:hover { background: #f0f6ff; }
+
+    .btn-hero-ghost {
+      background: rgba(255,255,255,0.12);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 700;
+      padding: 12px 24px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.28);
+      cursor: pointer;
+      text-decoration: none;
+      transition: 0.15s ease;
+    }
+
+    .btn-hero-ghost:hover { background: rgba(255,255,255,0.20); }
+
+    /* Stats bar inside hero */
+    .hero-stats {
+      display: flex;
+      gap: 0;
+      background: rgba(255,255,255,0.10);
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 14px;
+      overflow: hidden;
+      width: fit-content;
+    }
+
+    .hero-stat {
+      padding: 14px 24px;
+      border-right: 1px solid rgba(255,255,255,0.14);
+    }
+
+    .hero-stat:last-child { border-right: none; }
+
+    .hero-stat-num {
+      font-size: 22px;
+      font-weight: 700;
+      color: #fff;
+      line-height: 1;
+    }
+
+    .hero-stat-num.accent { color: var(--brand-mid); }
+
+    .hero-stat-label {
+      font-size: 12px;
+      color: rgba(255,255,255,0.6);
+      margin-top: 3px;
+    }
+
+    /* ── WEATHER STRIP ── */
+    .weather-strip {
+      margin-top: 14px;
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 16px;
+      padding: 16px 22px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
       gap: 14px;
     }
 
-    .mini-status-card {
-      background: #f8fafc;
-      border: 1px solid #e5e7eb;
-      border-radius: 20px;
-      padding: 18px;
+    .weather-strip-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
     }
 
-    .mini-status-card .label {
-      font-size: 13px;
-      color: #64748b;
-      margin-bottom: 10px;
+    .weather-live-dot {
+      width: 8px;
+      height: 8px;
+      background: #16a34a;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .weather-temp-big {
+      font-size: 24px;
       font-weight: 700;
-    }
-
-    .mini-status-card .value {
-      font-size: 30px;
-      font-weight: 900;
       color: #111827;
+      letter-spacing: -0.03em;
     }
 
-    .mini-status-card .sub {
-      margin-top: 6px;
-      color: #64748b;
+    .weather-desc-text {
       font-size: 14px;
-    }
-
-    .weather-summary {
-      background: linear-gradient(135deg, #eff6ff, #eef2ff);
-      border: 1px solid #dbeafe;
-      border-radius: 22px;
-      padding: 18px;
-    }
-
-    .weather-summary .title {
-      font-size: 13px;
-      color: #475569;
-      margin-bottom: 10px;
-      font-weight: 700;
-    }
-
-    .weather-summary .main {
-      font-size: 34px;
-      font-weight: 900;
-      color: #111827;
-    }
-
-    .weather-summary .desc {
-      margin-top: 8px;
       color: #64748b;
-      line-height: 1.6;
+      margin-top: 1px;
     }
 
-    .section {
-      margin-top: 28px;
+    .weather-meta-row {
+      display: flex;
+      gap: 22px;
+      flex-wrap: wrap;
     }
+
+    .weather-meta-item { font-size: 13px; color: #64748b; }
+    .weather-meta-item strong { display: block; font-size: 14px; font-weight: 700; color: #374151; }
+
+    .weather-link {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--brand);
+      text-decoration: none;
+    }
+
+    .weather-link:hover { text-decoration: underline; }
+
+    /* ── FEATURES ── */
+    .section { margin-top: 40px; }
 
     .section-head {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 16px;
       margin-bottom: 18px;
+      flex-wrap: wrap;
     }
 
     .section-head h2 {
-      margin: 0 0 8px;
-      font-size: 34px;
+      margin: 0;
+      font-size: 26px;
+      font-weight: 700;
       color: #111827;
+      letter-spacing: -0.03em;
     }
 
     .section-head p {
-      margin: 0;
-      color: #64748b;
-      line-height: 1.7;
-    }
-
-    .stats-panel {
-      padding: 26px;
-    }
-
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 16px;
-    }
-
-    .stat-card {
-      background: #f8fafc;
-      border: 1px solid #e5e7eb;
-      border-radius: 22px;
-      padding: 20px;
-    }
-
-    .stat-card .stat-label {
-      color: #64748b;
+      margin: 4px 0 0;
       font-size: 14px;
-      font-weight: 700;
-      margin-bottom: 10px;
-    }
-
-    .stat-card .stat-value {
-      font-size: 34px;
-      font-weight: 900;
-      color: #111827;
-      margin-bottom: 6px;
-    }
-
-    .stat-card .stat-note {
       color: #64748b;
-      font-size: 14px;
-      line-height: 1.6;
     }
 
     .features-grid {
       display: grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 18px;
-    }
-
-    .feature-card {
-      padding: 24px;
-      display: flex;
-      flex-direction: column;
       gap: 14px;
     }
 
-    .feature-icon {
-      width: 52px;
-      height: 52px;
+    .feature-card {
+      background: #fff;
+      border: 1px solid #e5e7eb;
       border-radius: 18px;
-      display: grid;
-      place-items: center;
-      background: linear-gradient(180deg, #eff6ff, #e0e7ff);
-      font-size: 24px;
-    }
-
-    .feature-card h3 {
-      margin: 0;
-      font-size: 22px;
-      color: #111827;
-    }
-
-    .feature-card p {
-      margin: 0;
-      color: #64748b;
-      line-height: 1.7;
-      flex: 1;
-    }
-
-    .feature-card a {
-      color: #1d4ed8;
-      font-weight: 800;
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      transition: 0.2s ease;
       text-decoration: none;
     }
 
-    .steps-grid {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 18px;
+    .feature-card:hover {
+      border-color: #c7d2fe;
+      box-shadow: 0 8px 24px rgba(24,73,169,0.10);
+      transform: translateY(-2px);
     }
 
-    .steps-card {
-      padding: 24px;
+    .feature-num {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--brand);
+      letter-spacing: -0.04em;
+      line-height: 1;
     }
 
-    .step-number {
-      width: 42px;
-      height: 42px;
-      border-radius: 999px;
-      display: grid;
-      place-items: center;
-      background: #dbeafe;
-      color: #1d4ed8;
-      font-weight: 900;
-      margin-bottom: 14px;
-    }
-
-    .steps-card h3 {
-      margin: 0 0 10px;
-      font-size: 22px;
+    .feature-title {
+      font-size: 15px;
+      font-weight: 700;
       color: #111827;
     }
 
-    .steps-card p {
-      margin: 0;
+    .feature-desc {
+      font-size: 13px;
       color: #64748b;
-      line-height: 1.7;
+      line-height: 1.6;
+      flex: 1;
     }
 
+    .feature-arrow {
+      font-size: 13px;
+      color: var(--brand);
+      font-weight: 700;
+    }
+
+    /* ── HOW IT WORKS ── */
+    .steps-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .step-card {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 18px;
+      padding: 24px;
+    }
+
+    .step-num {
+      width: 36px;
+      height: 36px;
+      background: var(--brand-light);
+      color: var(--brand);
+      font-size: 15px;
+      font-weight: 700;
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      margin-bottom: 14px;
+    }
+
+    .step-card h3 {
+      margin: 0 0 8px;
+      font-size: 17px;
+      font-weight: 700;
+      color: #111827;
+    }
+
+    .step-card p {
+      margin: 0;
+      font-size: 14px;
+      color: #64748b;
+      line-height: 1.65;
+    }
+
+    /* ── CTA BANNER ── */
     .cta-banner {
-      margin-top: 28px;
-      padding: 28px;
+      margin-top: 40px;
+      background: var(--brand);
+      border-radius: 20px;
+      padding: 32px 36px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 18px;
+      gap: 20px;
       flex-wrap: wrap;
     }
 
     .cta-banner h2 {
-      margin: 0 0 8px;
-      font-size: 30px;
-      color: #111827;
+      margin: 0 0 6px;
+      font-size: 22px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: -0.02em;
     }
 
     .cta-banner p {
       margin: 0;
-      color: #64748b;
-      line-height: 1.7;
-    }
-
-    .footer {
-      margin-top: 28px;
-      color: #64748b;
+      color: rgba(255,255,255,0.75);
       font-size: 14px;
-      text-align: center;
+      line-height: 1.6;
     }
 
-    .status-ok {
-      color: #16a34a;
-      font-weight: 800;
-    }
+    .cta-btns { display: flex; gap: 10px; flex-wrap: wrap; }
 
-    .status-muted {
-      color: #64748b;
+    .btn-cta-white {
+      background: #fff;
+      color: var(--brand);
+      font-size: 14px;
       font-weight: 700;
+      padding: 11px 22px;
+      border-radius: 10px;
+      text-decoration: none;
+      transition: 0.15s;
     }
 
-    @media (max-width: 1080px) {
-      .hero,
-      .features-grid,
-      .stats-grid,
-      .steps-grid {
-        grid-template-columns: 1fr 1fr;
-      }
+    .btn-cta-white:hover { background: #f0f6ff; }
 
-      .hero {
-        grid-template-columns: 1fr;
-      }
+    .btn-cta-ghost {
+      background: rgba(255,255,255,0.12);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 700;
+      padding: 11px 22px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.28);
+      text-decoration: none;
+      transition: 0.15s;
+    }
+
+    .btn-cta-ghost:hover { background: rgba(255,255,255,0.20); }
+
+    /* ── FOOTER ── */
+    .home-footer {
+      margin-top: 36px;
+      text-align: center;
+      font-size: 13px;
+      color: #94a3b8;
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 1080px) {
+      .features-grid { grid-template-columns: 1fr 1fr; }
     }
 
     @media (max-width: 720px) {
-      .home-nav {
-        padding: 14px;
-      }
-
-      .home-links {
-        display: none;
-      }
-
-      .hero-copy,
-      .hero-panel,
-      .stats-panel,
-      .feature-card,
-      .steps-card,
-      .cta-banner {
-        border-radius: 22px;
-      }
-
-      .hero-highlights,
+      .home-links { display: none; }
+      .hero-content { padding: 24px; }
+      .hero-stats { width: 100%; }
+      .hero-stat { padding: 12px 16px; flex: 1; }
       .features-grid,
-      .stats-grid,
-      .steps-grid,
-      .mini-status-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .hero-copy {
-        padding: 24px;
-      }
-
-      .hero-panel {
-        padding: 20px;
-      }
-
-      .home-brand-mark,
-      .home-brand-mark svg {
-        width: 46px;
-        height: 46px;
-      }
-
-      .home-brand-title {
-        font-size: 1.6rem;
-      }
-
-      .home-brand-subtitle {
-        font-size: 11px;
-      }
+      .steps-grid { grid-template-columns: 1fr; }
+      .weather-strip { flex-direction: column; align-items: flex-start; }
+      .cta-banner { padding: 24px; }
     }
   </style>
 </head>
 <body>
-  <div class="home-page">
-    <div class="home-shell">
-      <nav class="home-nav">
-        <a class="home-brand" href="{{ url_for('home') }}" aria-label="G8BikeShare Home">
-          <div class="home-brand-mark">
-            <svg viewBox="0 0 64 64" aria-hidden="true">
-              <defs>
-                <linearGradient id="g8homegrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stop-color="#60a5fa"></stop>
-                  <stop offset="100%" stop-color="#1d4ed8"></stop>
-                </linearGradient>
-              </defs>
-              <rect x="4" y="4" width="56" height="56" rx="16" fill="url(#g8homegrad)"></rect>
-              <circle cx="21" cy="42" r="8" fill="none" stroke="white" stroke-width="3"></circle>
-              <circle cx="43" cy="42" r="8" fill="none" stroke="white" stroke-width="3"></circle>
-              <path d="M21 42 L28 27 L35 42 L43 42" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>
-              <path d="M28 27 H37" fill="none" stroke="white" stroke-width="3" stroke-linecap="round"></path>
-              <path d="M31 20 C25 20,25 29,31 29 C37 29,37 20,31 20 Z" fill="none" stroke="white" stroke-width="2.4"></path>
-              <path d="M39 20 C33 20,33 29,39 29 C45 29,45 20,39 20 Z" fill="none" stroke="white" stroke-width="2.4"></path>
-            </svg>
-          </div>
-          <div class="home-brand-text">
-            <span class="home-brand-title"><span class="home-brand-accent">G8</span>BikeShare</span>
-            <span class="home-brand-subtitle">Smart Dublin Bike Companion</span>
-          </div>
-        </a>
+  <div class="home-shell">
 
-        <div class="home-links">
-          <a href="{{ url_for('home') }}">Home</a>
-          <a href="{{ url_for('dashboard') }}">Dashboard</a>
-          <a href="{{ url_for('journey_planner') }}">Journey Planner</a>
-          <a href="{{ url_for('weather_page') }}">Weather</a>
-          <a href="{{ url_for('about') }}">About</a>
-          <a href="{{ url_for('sign_in') }}">Account</a>
+    <!-- NAV -->
+    <nav class="home-nav">
+      <a class="home-brand" href="{{ url_for('home') }}" aria-label="G8BikeShare Home">
+        <div class="home-brand-mark">
+          <svg viewBox="0 0 22 22" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="5.5" cy="15.5" r="3"/>
+            <circle cx="16.5" cy="15.5" r="3"/>
+            <path d="M5.5 15.5L8.5 8L12 15.5H16.5"/>
+            <path d="M8.5 8H14"/>
+          </svg>
         </div>
+        <span class="home-brand-title"><span class="home-brand-accent">G8</span>BikeShare</span>
+      </a>
 
-        <div class="home-nav-actions">
-          <a class="home-btn-outline" href="{{ url_for('journey_planner') }}">Plan a journey</a>
-          <a class="home-btn" href="{{ url_for('dashboard') }}">Open dashboard</a>
+      <div class="home-links">
+        <a href="{{ url_for('home') }}" class="active">Home</a>
+        <a href="{{ url_for('dashboard') }}">Dashboard</a>
+        <a href="{{ url_for('journey_planner') }}">Journey</a>
+        <a href="{{ url_for('weather_page') }}">Weather</a>
+        <a href="{{ url_for('about') }}">About</a>
+      </div>
+
+      <div class="nav-actions">
+        <span class="nav-weather-pill" id="navWeatherPill">&#9729; --°C</span>
+        <a class="btn-nav-outline" href="{{ url_for('sign_in') }}">Account</a>
+        <a class="btn-nav-primary" href="{{ url_for('dashboard') }}">Dashboard</a>
+      </div>
+    </nav>
+
+    <!-- HERO -->
+    <section class="hero">
+      <div class="hero-bg-photo"></div>
+      <div class="hero-overlay"></div>
+      <div class="hero-content">
+        <div class="hero-eyebrow">
+          <div class="hero-eyebrow-dot"></div>
+          Live Dublin Bikes · updated every minute
         </div>
-      </nav>
-
-      <section class="hero">
-        <div class="hero-copy">
-          <div class="eyebrow">Live city mobility • Dublin bike companion</div>
-          <h1>Find a bike, plan a route, and ride smarter in Dublin.</h1>
-          <p>
-            G8BikeShare helps users check real-time station availability, explore bike trends,
-            review current weather, and open cycling directions in seconds.
-          </p>
-
-          <div class="hero-actions">
-            <a class="home-btn" href="{{ url_for('dashboard') }}">View live dashboard</a>
-            <a class="home-btn-outline" href="{{ url_for('journey_planner') }}">Start journey planner</a>
-            <a class="home-btn-outline" href="{{ url_for('sign_in') }}">Account</a>
+        <h1 class="hero-h1">Find a bike.<br><span>Ride smarter.</span></h1>
+        <p class="hero-sub">
+          Live station availability, weather-aware advice, and AI-powered suggestions —
+          all in one place for Dublin cyclists.
+        </p>
+        <div class="hero-btns">
+          <a class="btn-hero-primary" href="{{ url_for('dashboard') }}">Open dashboard</a>
+          <a class="btn-hero-ghost" href="{{ url_for('journey_planner') }}">Plan a journey</a>
+        </div>
+        <div class="hero-stats">
+          <div class="hero-stat">
+            <div class="hero-stat-num accent" id="heroStations">--</div>
+            <div class="hero-stat-label">stations</div>
           </div>
-
-          <div class="hero-highlights">
-            <div class="hero-highlight">
-              <strong id="heroStations">--</strong>
-              <span>stations tracked</span>
-            </div>
-            <div class="hero-highlight">
-              <strong id="heroBikes">--</strong>
-              <span>bikes available now</span>
-            </div>
-            <div class="hero-highlight">
-              <strong id="heroWeather">--</strong>
-              <span>current weather</span>
-            </div>
+          <div class="hero-stat">
+            <div class="hero-stat-num" id="heroBikes">--</div>
+            <div class="hero-stat-label">bikes available now</div>
+          </div>
+          <div class="hero-stat">
+            <div class="hero-stat-num accent" id="heroStatus">--</div>
+            <div class="hero-stat-label">service status</div>
           </div>
         </div>
+      </div>
+    </section>
 
-        <aside class="hero-panel">
-          <div class="hero-panel-top">
-            <h2>What you can do here</h2>
-            <p>
-              Use the dashboard to inspect live station markers, compare bike availability,
-              review historical trends, and move directly into route planning.
-            </p>
-          </div>
-
-          <div class="mini-status-grid">
-            <div class="mini-status-card">
-              <div class="label">Availability status</div>
-              <div class="value" id="miniOpen">--</div>
-              <div class="sub">stations currently open</div>
-            </div>
-
-            <div class="mini-status-card">
-              <div class="label">AI support</div>
-              <div class="value">Live</div>
-              <div class="sub">rule-based and Gemini-powered assistance</div>
-            </div>
-          </div>
-
-          <div class="weather-summary">
-            <div class="title">Current weather snapshot</div>
-            <div class="main" id="weatherSummaryTemp">--°C</div>
-            <div class="desc" id="weatherSummaryDesc">
-              Weather information will appear here after the live weather API is available.
-            </div>
-          </div>
-        </aside>
-      </section>
-
-      <section class="section">
-        <div class="section-head">
-          <h2>Live city snapshot</h2>
-          <p>These numbers are loaded from the current bike and weather APIs.</p>
-        </div>
-
-        <div class="stats-panel">
-          <div class="stats-grid">
-            <div class="stat-card">
-              <div class="stat-label">Stations in database</div>
-              <div class="stat-value" id="statStations">--</div>
-              <div class="stat-note">Count of station records returned by the API.</div>
-            </div>
-
-            <div class="stat-card">
-              <div class="stat-label">Open stations</div>
-              <div class="stat-value" id="statOpenStations">--</div>
-              <div class="stat-note">Stations currently marked as open.</div>
-            </div>
-
-            <div class="stat-card">
-              <div class="stat-label">Available bikes</div>
-              <div class="stat-value" id="statAvailableBikes">--</div>
-              <div class="stat-note">Total bikes currently available across returned stations.</div>
-            </div>
-
-            <div class="stat-card">
-              <div class="stat-label">Login status</div>
-              <div class="stat-value" id="statAuth">--</div>
-              <div class="stat-note" id="statAuthNote">Checking current session state.</div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section class="section">
-        <div class="section-head">
-          <h2>Core features</h2>
-          <p>These modules show the main value of the G8BikeShare platform.</p>
-        </div>
-
-        <div class="features-grid">
-          <article class="feature-card">
-            <div class="feature-icon">🗺️</div>
-            <h3>Live dashboard</h3>
-            <p>Inspect station markers, station details, dock availability, and bike trends across Dublin.</p>
-            <a href="{{ url_for('dashboard') }}">Go to dashboard →</a>
-          </article>
-
-          <article class="feature-card">
-            <div class="feature-icon">🧭</div>
-            <h3>Journey planner</h3>
-            <p>Pick a preferred station, add a destination, and open cycling directions directly in Google Maps.</p>
-            <a href="{{ url_for('journey_planner') }}">Plan a journey →</a>
-          </article>
-
-          <article class="feature-card">
-            <div class="feature-icon">🌤️</div>
-            <h3>Weather-aware riding</h3>
-            <p>Review the live weather and forecast before choosing whether to ride and what to bring.</p>
-            <a href="{{ url_for('weather_page') }}">View weather →</a>
-          </article>
-
-          <article class="feature-card">
-            <div class="feature-icon">✨</div>
-            <h3>AI Bike Assistant</h3>
-            <p>Use rule-based advice and AI chat to ask natural-language questions about borrowing, returning, and ride conditions.</p>
-            <a href="{{ url_for('dashboard') }}">Open AI-ready dashboard →</a>
-          </article>
-        </div>
-      </section>
-
-      <section class="section">
-        <div class="section-head">
-          <h2>How it works</h2>
-          <p>A simple flow for users who just want to get moving quickly.</p>
-        </div>
-
-        <div class="steps-grid">
-          <article class="steps-card">
-            <div class="step-number">1</div>
-            <h3>Check live availability</h3>
-            <p>Search for a station or browse the dashboard to see where bikes and docks are available right now.</p>
-          </article>
-
-          <article class="steps-card">
-            <div class="step-number">2</div>
-            <h3>Review conditions</h3>
-            <p>Look at weather and station capacity to avoid empty stations, full docks, or poor riding conditions.</p>
-          </article>
-
-          <article class="steps-card">
-            <div class="step-number">3</div>
-            <h3>Open your route</h3>
-            <p>Launch cycling directions and start your journey with less friction and better information.</p>
-          </article>
-        </div>
-      </section>
-
-      <section class="cta-banner">
+    <!-- WEATHER STRIP -->
+    <div class="weather-strip">
+      <div class="weather-strip-left">
+        <div class="weather-live-dot"></div>
         <div>
-          <h2>Ready to explore Dublin Bikes in real time?</h2>
-          <p>Open the dashboard for live markers, historical charts, and AI-guided riding advice.</p>
+          <div class="weather-temp-big" id="weatherTemp">--°C</div>
+          <div class="weather-desc-text" id="weatherDesc">Loading weather...</div>
         </div>
-        <div class="home-nav-actions">
-          <a class="home-btn-outline" href="{{ url_for('journey_planner') }}">Journey planner</a>
-          <a class="home-btn" href="{{ url_for('dashboard') }}">Launch dashboard</a>
-        </div>
-      </section>
+      </div>
+      <div class="weather-meta-row">
+        <div class="weather-meta-item"><strong id="weatherWind">--</strong>wind (m/s)</div>
+        <div class="weather-meta-item"><strong id="weatherHumidity">--</strong>humidity</div>
+        <div class="weather-meta-item"><strong id="weatherRain">--</strong>rain 1h</div>
+      </div>
+      <a class="weather-link" href="{{ url_for('weather_page') }}">Full forecast →</a>
+    </div>
 
-      <div class="footer">
-        G8BikeShare • UCD Software Engineering Project • Dublin bike availability, weather and journey planning
+    <!-- FEATURES -->
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <h2>What G8BikeShare does</h2>
+          <p>Everything you need for smarter Dublin cycling, in one dashboard.</p>
+        </div>
+      </div>
+      <div class="features-grid">
+        <a class="feature-card" href="{{ url_for('dashboard') }}">
+          <div class="feature-num">01</div>
+          <div class="feature-title">Live station map</div>
+          <div class="feature-desc">Browse station markers with real-time bike and dock counts across Dublin.</div>
+          <div class="feature-arrow">Go to dashboard →</div>
+        </a>
+        <a class="feature-card" href="{{ url_for('weather_page') }}">
+          <div class="feature-num">02</div>
+          <div class="feature-title">Weather-aware riding</div>
+          <div class="feature-desc">Live conditions and 5-day forecast to help you decide when and what to wear.</div>
+          <div class="feature-arrow">View weather →</div>
+        </a>
+        <a class="feature-card" href="{{ url_for('dashboard') }}">
+          <div class="feature-num">03</div>
+          <div class="feature-title">AI bike assistant</div>
+          <div class="feature-desc">Ask natural-language questions about stations, availability, and ride conditions.</div>
+          <div class="feature-arrow">Try the assistant →</div>
+        </a>
+        <a class="feature-card" href="{{ url_for('journey_planner') }}">
+          <div class="feature-num">04</div>
+          <div class="feature-title">Journey planner</div>
+          <div class="feature-desc">Pick a station and destination, then open Google Maps cycling directions instantly.</div>
+          <div class="feature-arrow">Plan a journey →</div>
+        </a>
+      </div>
+    </section>
+
+    <!-- HOW IT WORKS -->
+    <section class="section">
+      <div class="section-head">
+        <div>
+          <h2>How it works</h2>
+          <p>Three steps to get moving faster.</p>
+        </div>
+      </div>
+      <div class="steps-grid">
+        <div class="step-card">
+          <div class="step-num">1</div>
+          <h3>Check live availability</h3>
+          <p>Search for a station or browse the map to see where bikes and docks are available right now.</p>
+        </div>
+        <div class="step-card">
+          <div class="step-num">2</div>
+          <h3>Review conditions</h3>
+          <p>Check the weather and use the AI assistant to avoid empty stations or poor riding conditions.</p>
+        </div>
+        <div class="step-card">
+          <div class="step-num">3</div>
+          <h3>Open your route</h3>
+          <p>Launch cycling directions straight from the journey planner and ride with less friction.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <div class="cta-banner">
+      <div>
+        <h2>Ready to explore Dublin Bikes in real time?</h2>
+        <p>Open the dashboard for live markers, 48-hour trends, and AI-guided riding advice.</p>
+      </div>
+      <div class="cta-btns">
+        <a class="btn-cta-ghost" href="{{ url_for('journey_planner') }}">Journey planner</a>
+        <a class="btn-cta-white" href="{{ url_for('dashboard') }}">Launch dashboard</a>
       </div>
     </div>
+
+    <div class="home-footer">
+      G8BikeShare &nbsp;·&nbsp; UCD Software Engineering Project &nbsp;·&nbsp; Dublin bike availability, weather and journey planning
+    </div>
+
   </div>
 
   <script>
     document.addEventListener("DOMContentLoaded", async () => {
-      await Promise.all([
-        loadBikeStats(),
-        loadWeatherSummary(),
-        loadAuthStatus()
-      ]);
+      await Promise.all([loadBikeStats(), loadWeatherSummary()]);
     });
 
     async function loadBikeStats() {
       try {
-        const response = await fetch("/api/bike/all");
-        const result = await response.json();
+        const res = await fetch("/api/bike/all");
+        const result = await res.json();
         const rows = result.rows || [];
-
-        const totalStations = rows.length;
-        const openStations = rows.filter(row => String(row.status || "").toUpperCase() === "OPEN").length;
-        const totalBikes = rows.reduce((sum, row) => sum + Number(row.available_bikes || 0), 0);
-
-        setText("heroStations", totalStations);
-        setText("heroBikes", totalBikes);
-        setText("miniOpen", openStations);
-        setText("statStations", totalStations);
-        setText("statOpenStations", openStations);
-        setText("statAvailableBikes", totalBikes);
-      } catch (error) {
-        console.error("Failed to load bike stats:", error);
+        const total = rows.length;
+        const open = rows.filter(r => String(r.status || "").toUpperCase() === "OPEN").length;
+        const bikes = rows.reduce((s, r) => s + Number(r.available_bikes || 0), 0);
+        setText("heroStations", total);
+        setText("heroBikes", bikes);
+        setText("heroStatus", open > 0 ? "Open" : "Limited");
+      } catch {
         setText("heroStations", "N/A");
         setText("heroBikes", "N/A");
-        setText("miniOpen", "N/A");
-        setText("statStations", "N/A");
-        setText("statOpenStations", "N/A");
-        setText("statAvailableBikes", "N/A");
+        setText("heroStatus", "N/A");
       }
     }
 
     async function loadWeatherSummary() {
       try {
-        const response = await fetch("/api/weather/current");
-        const result = await response.json();
-
-        if (!result.ok || !result.data) {
-          setText("heroWeather", "Unavailable");
-          setText("weatherSummaryTemp", "--°C");
-          setText("weatherSummaryDesc", "Live weather is currently unavailable. Add the OpenWeather API key to enable this panel.");
-          return;
-        }
-
-        const weather = result.data;
-        const temp = weather.temp == null ? "--" : `${weather.temp}°C`;
-        const desc = weather.weather_description || weather.weather_main || "Weather available";
-
-        setText("heroWeather", desc);
-        setText("weatherSummaryTemp", temp);
-        setText(
-          "weatherSummaryDesc",
-          `Current condition: ${desc}. Humidity: ${safeValue(weather.humidity)}%. Wind: ${safeValue(weather.wind_speed)} m/s.`
-        );
-      } catch (error) {
-        console.error("Failed to load weather summary:", error);
-        setText("heroWeather", "Unavailable");
-        setText("weatherSummaryTemp", "--°C");
-        setText("weatherSummaryDesc", "Weather data could not be loaded.");
+        const res = await fetch("/api/weather/current");
+        const result = await res.json();
+        if (!result.ok || !result.data) throw new Error();
+        const w = result.data;
+        const temp = w.temp != null ? `${w.temp}°C` : "--°C";
+        const desc = w.weather_description || w.weather_main || "Live weather";
+        setText("weatherTemp", temp);
+        setText("weatherDesc", desc);
+        setText("weatherWind", w.wind_speed != null ? `${w.wind_speed} m/s` : "--");
+        setText("weatherHumidity", w.humidity != null ? `${w.humidity}%` : "--");
+        setText("weatherRain", w.rain_1h != null ? `${w.rain_1h} mm` : "0 mm");
+        setText("navWeatherPill", `☁ ${temp} · ${desc}`);
+      } catch {
+        setText("weatherTemp", "--°C");
+        setText("weatherDesc", "Weather unavailable");
       }
     }
 
-    async function loadAuthStatus() {
-      try {
-        const response = await fetch("/api/auth/me");
-        const result = await response.json();
-
-        const statAuthEl = document.getElementById("statAuth");
-
-        if (result.authenticated && result.user) {
-          setText("statAuth", "Signed in");
-          setText("statAuthNote", `Current user: ${result.user.username}`);
-          if (statAuthEl) statAuthEl.className = "status-ok";
-        } else {
-          setText("statAuth", "Guest");
-          setText("statAuthNote", "No active login session right now.");
-          if (statAuthEl) statAuthEl.className = "status-muted";
-        }
-      } catch (error) {
-        console.error("Failed to load auth status:", error);
-        setText("statAuth", "Unknown");
-        setText("statAuthNote", "Could not read current session state.");
-      }
-    }
-
-    function setText(id, value) {
+    function setText(id, val) {
       const el = document.getElementById(id);
-      if (el) el.textContent = value;
-    }
-
-    function safeValue(value) {
-      return value == null || value === "" ? "N/A" : value;
+      if (el) el.textContent = val;
     }
   </script>
 </body>

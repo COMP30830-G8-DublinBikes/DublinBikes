@@ -776,6 +776,9 @@ async function sendAiChatMessage(message) {
   setAiStatus("Thinking...");
 
   try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 90000); // wait 90 s
+
     const response = await fetch("/api/ai/chat", {
       method: "POST",
       headers: {
@@ -785,8 +788,10 @@ async function sendAiChatMessage(message) {
         message,
         station_id: selectedStationId,
         history: aiChatHistory
-      })
+      }),
+      signal: controller.signal
     });
+    clearTimeout(timeout);
 
     const result = await response.json();
 

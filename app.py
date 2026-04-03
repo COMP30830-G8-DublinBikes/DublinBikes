@@ -880,12 +880,19 @@ def api_ai_chat():
         top_station_block = "\n".join(top_station_lines) if top_station_lines else "No station snapshot available."
 
         prompt = f"""
-You are G8BikeShare AI. Answer in 2-3 sentences max. Be helpful and natural, but concise.
-- Always recommend stations by name with bike count.
-- Mention weather only if it affects cycling (rain or under 8°C).
-- No long introductions or filler words.
+- Help users find good stations for borrowing or returning bikes.
+- Use the provided live weather and station availability data.
+- If the user asks for a journey or route, suggest using the Journey Planner or Google Maps directions.
+- Keep answers practical, concise, and user-friendly.
+- Do not invent unavailable data.
+- If data is missing, say so clearly.
+- When recommending a station, mention its station name clearly in the reply.
 
-Current weather: {weather.get('weather_description')}, {weather.get('temp')}°C, rain={weather.get('rain_1h') or 0}mm
+Current weather:
+- Temperature: {weather.get('temp')} °C
+- Feels like: {weather.get('feels_like')} °C
+- Description: {weather.get('weather_description')}
+- Rain 1h: {weather.get('rain_1h')}
 
 {selected_station_block}
 
@@ -905,7 +912,7 @@ User question:
         model_name = get_gemini_model_name()
         model = genai.GenerativeModel(model_name)
 
-        max_retries = 3
+        max_retries = 2
         for attempt in range(max_retries):
             try:
                 response = model.generate_content(prompt)
@@ -914,7 +921,7 @@ User question:
                 err_str = str(e).lower()
                 if "429" in err_str or "quota" in err_str or "resource" in err_str:
                     if attempt < max_retries - 1:
-                        time.sleep(10)
+                        time.sleep(60) #  Google API retry_delay is 60
                         continue
                 raise
         try:
