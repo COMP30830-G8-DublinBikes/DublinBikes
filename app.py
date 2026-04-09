@@ -3,8 +3,6 @@ from __future__ import annotations
 import os
 import re
 import datetime as dt
-import time
-
 from typing import Any, Dict, List, Optional
 
 from dotenv import load_dotenv
@@ -841,7 +839,7 @@ def api_ai_chat():
             except Exception:
                 selected_station = None
 
-        top_stations = get_top_station_snapshots(limit=4)
+        top_stations = get_top_station_snapshots(limit=8)
 
         compact_history_lines = []
         if isinstance(history, list):
@@ -880,8 +878,12 @@ def api_ai_chat():
         top_station_block = "\n".join(top_station_lines) if top_station_lines else "No station snapshot available."
 
         prompt = f"""
+You are G8BikeShare AI, a helpful assistant for a Dublin bike-sharing web application.
+
+Your job:
 - Help users find good stations for borrowing or returning bikes.
 - Use the provided live weather and station availability data.
+- Answer questions about ride conditions, bike availability, dock availability, and how to use the service.
 - If the user asks for a journey or route, suggest using the Journey Planner or Google Maps directions.
 - Keep answers practical, concise, and user-friendly.
 - Do not invent unavailable data.
@@ -905,25 +907,13 @@ Recent chat history:
 User question:
 {message}
 
+Please answer in clear English. Keep the answer grounded in the data above and focused on G8BikeShare service information.
 """.strip()
-
-        # 改後
 
         model_name = get_gemini_model_name()
         model = genai.GenerativeModel(model_name)
+        response = model.generate_content(prompt)
 
-        max_retries = 2
-        for attempt in range(max_retries):
-            try:
-                response = model.generate_content(prompt)
-                break
-            except Exception as e:
-                err_str = str(e).lower()
-                if "429" in err_str or "quota" in err_str or "resource" in err_str:
-                    if attempt < max_retries - 1:
-                        time.sleep(60) #  Google API retry_delay is 60
-                        continue
-                raise
         try:
             reply_text = response.text.strip()
         except Exception:
