@@ -1068,7 +1068,7 @@ Please answer in clear English. Keep the answer grounded in the data above and f
 # -----------------------------
 # Main
 # -----------------------------
-if _name_ == "_main_":
+if __name__ == "_main_":
     debug_mode = os.getenv("FLASK_DEBUG", "1") == "1"
     host = os.getenv("FLASK_RUN_HOST", "0.0.0.0") 
     port = int(os.getenv("PORT", "5000"))
