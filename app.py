@@ -24,12 +24,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 # -----------------------------
 app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "dev-secret-key-change-in-production")
-with app.app_context():
-    try:
-        ensure_users_table()
-        print("✅ Database initialized successfully.")
-    except Exception as e:
-        print(f"❌ DB Init Error: {e}")
+
 app.config.update(
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE="Lax",
@@ -1068,8 +1063,14 @@ Please answer in clear English. Keep the answer grounded in the data above and f
 # -----------------------------
 # Main
 # -----------------------------
-if __name__ == "_main_":
-    debug_mode = os.getenv("FLASK_DEBUG", "1") == "1"
+with app.app_context():
+    try:
+        ensure_users_table()
+        print("✅ Database initialized successfully.")
+    except Exception as e:
+        print(f"❌ DB Init Error: {e}")
+if __name__ == "__main__":
+    debug_mode = os.getenv("FLASK_DEBUG", "0") == "1"
     host = os.getenv("FLASK_RUN_HOST", "0.0.0.0") 
     port = int(os.getenv("PORT", "5000"))
 
