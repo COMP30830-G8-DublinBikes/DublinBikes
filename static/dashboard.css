@@ -499,3 +499,33 @@
     width: 100%;
   }
 }
+
+.locate-me-control {
+  margin: 0 12px 12px 0;
+}
+
+.locate-me-btn {
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 14px;
+  background: #ffffff;
+  color: #1e3a8a;
+  font-size: 20px;
+  cursor: pointer;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.18);
+  border: 1px solid #dbe2ea;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.18s ease;
+}
+
+.locate-me-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 22px rgba(15, 23, 42, 0.22);
+}
+
+.locate-me-btn:active {
+  transform: scale(0.98);
+}

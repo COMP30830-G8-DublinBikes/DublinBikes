@@ -3,346 +3,770 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>G8BikeShare – Dublin Bikes Dashboard</title>
+  <title>Dashboard – G8BikeShare</title>
 
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
   <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}" />
-
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <style>
-    .topbar {
-      flex-wrap: wrap;
+    /* ── Dashboard page-level overrides ── */
+    body { background: var(--bg); }
+
+    .container {
+      max-width: var(--max-w);
+      margin: 0 auto;
+      padding: var(--page-py);
     }
 
-    .topbar-actions {
+    /* ── Topbar extras ── */
+    .topbar {
       display: flex;
       align-items: center;
-      gap: 10px;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      background: rgba(255,255,255,0.97);
+      border: 1px solid #e5e7eb;
+      border-radius: 18px;
+      padding: 14px 20px;
+      box-shadow: 0 4px 20px rgba(15,23,42,0.06);
+      margin-bottom: 20px;
+      position: sticky;
+      top: 12px;
+      z-index: 40;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
       flex-wrap: wrap;
     }
 
-    .nav-link-btn,
-    .nav-solid-btn,
-    .small-btn,
-    .ghost-btn {
+    .session-chip {
       display: inline-flex;
       align-items: center;
-      justify-content: center;
-      border-radius: 999px;
-      padding: 10px 14px;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: var(--r-pill);
+      font-size: 12.5px;
+      font-weight: 600;
+      background: var(--line-light);
+      color: var(--muted);
+      border: 1px solid var(--line);
+    }
+
+    .session-chip.signed-in {
+      background: var(--green-pale);
+      color: var(--green);
+      border-color: var(--green-border);
+    }
+
+    /* ── Dashboard hero ── */
+    .dashboard-hero {
+      margin-bottom: 20px;
+    }
+
+    .dashboard-hero h1 {
+      margin: 0 0 6px;
+      font-size: clamp(24px, 4vw, 34px);
       font-weight: 800;
-      text-decoration: none;
-      border: 1px solid #c7d2fe;
-      background: #fff;
-      color: #1d4ed8;
-      cursor: pointer;
-      transition: 0.2s ease;
+      letter-spacing: -0.03em;
+      color: var(--text);
     }
 
-    .nav-link-btn:hover,
-    .ghost-btn:hover,
-    .small-btn:hover {
-      background: #eef2ff;
+    .dashboard-hero p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.6;
     }
 
-    .nav-solid-btn,
-    .small-btn.active {
-      background: linear-gradient(135deg, #2563eb, #1d4ed8);
-      color: #fff;
-      border: none;
-      box-shadow: 0 10px 24px rgba(37, 99, 235, 0.18);
+    /* ── Layout ── */
+    .dashboard-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.85fr) minmax(300px, 420px);
+      gap: 20px;
+      align-items: start;
     }
 
-    .session-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      border-radius: 999px;
-      padding: 10px 12px;
-      font-size: 14px;
-      font-weight: 800;
-      border: 1px solid #e5e7eb;
-      background: #fff;
-      color: #475569;
+    /* ── Map panel ── */
+    .map-panel {
+      position: sticky;
+      top: 90px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--r-2xl);
+      padding: 22px;
+      box-shadow: var(--shadow-md);
+      max-height: calc(100vh - 110px);
+      overflow-y: auto;
     }
 
-    .session-pill.signed-in {
-      background: #ecfdf5;
-      color: #166534;
-      border-color: #bbf7d0;
-    }
-
-    .panel-title-row {
+    .panel-header {
       display: flex;
       align-items: flex-start;
       justify-content: space-between;
-      gap: 16px;
+      gap: 12px;
       flex-wrap: wrap;
+      margin-bottom: 14px;
     }
 
-    .map-meta {
+    .panel-header h2 {
+      margin: 0 0 4px;
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: var(--text);
+    }
+
+    .panel-header p {
+      margin: 0;
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .map-chips {
       display: flex;
-      gap: 10px;
+      gap: 8px;
       flex-wrap: wrap;
-      margin-top: 10px;
+      margin-top: 8px;
     }
 
     .map-chip {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      padding: 8px 12px;
-      border-radius: 999px;
-      background: #f8fafc;
-      border: 1px solid #e5e7eb;
-      color: #475569;
-      font-size: 13px;
-      font-weight: 700;
+      gap: 5px;
+      padding: 5px 11px;
+      border-radius: var(--r-pill);
+      background: var(--bg);
+      border: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 600;
     }
 
-    .station-actions,
+    #map {
+      width: 100%;
+      height: 580px;
+      border-radius: var(--r-xl);
+      overflow: hidden;
+      background: #e2e8f0;
+      border: 1px solid var(--line);
+      margin-top: 2px;
+    }
+
+
+    .map-error {
+      height: 580px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 32px;
+      color: var(--red);
+      background: var(--red-pale);
+      border: 1px solid var(--red-border);
+      border-radius: var(--r-xl);
+      font-weight: 600;
+      line-height: 1.7;
+    }
+
+    .map-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 20px;
+      margin-top: 14px;
+      font-size: 13px;
+      color: var(--text-2);
+    }
+
+    .map-legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .legend-dot.green  { background: #22c55e; }
+    .legend-dot.orange { background: #f59e0b; }
+    .legend-dot.red    { background: #ef4444; }
+    .legend-dot.gray   { background: #94a3b8; }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .sidebar-card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--r-xl);
+      padding: 20px;
+      box-shadow: var(--shadow-md);
+    }
+
+    .sidebar-card-title {
+      margin: 0 0 14px;
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+      color: var(--text);
+    }
+
+    /* Station details */
+    .station-meta-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .metric-box .metric-label {
+      font-size: 11px;
+    }
+
+    .metric-box .metric-value {
+      font-size: 24px;
+    }
+
+    .station-status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 10px;
+      padding: 6px 12px;
+      border-radius: var(--r-pill);
+      font-size: 12.5px;
+      font-weight: 700;
+      background: var(--brand-pale);
+      color: var(--brand);
+      border: 1px solid var(--brand-border);
+    }
+
+    /* Weather card grid */
+    .weather-mini-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .weather-mini-item {
+      background: var(--bg);
+      border: 1px solid var(--line);
+      border-radius: var(--r-md);
+      padding: 12px;
+    }
+
+    .weather-mini-label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.02em; margin-bottom: 4px; }
+    .weather-mini-value { font-size: 20px; font-weight: 800; color: var(--text); letter-spacing: -0.02em; }
+
+    /* Chart card */
     .chart-toolbar {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+
+    .chart-wrap {
+      position: relative;
+      margin-top: 2px;
+    }
+
+    .chart-wrap canvas {
+      width: 100% !important;
+      height: 220px !important;
+    }
+
+    .chart-summary-text {
+      margin-top: 10px;
+      font-size: 12.5px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    /* Rule-based assistant */
+    .assistant-box {
+      background: var(--bg);
+      border: 1px solid var(--line);
+      border-radius: var(--r-lg);
+      padding: 14px;
+      font-size: 14px;
+      line-height: 1.75;
+      color: var(--text-2);
+      min-height: 120px;
+      white-space: pre-line;
+    }
+
+    .assistant-meta-text {
+      margin-top: 10px;
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .assistant-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+
+    /* Station action buttons */
+    .station-actions {
       display: flex;
       gap: 10px;
       flex-wrap: wrap;
       margin-top: 16px;
     }
 
-    .small-btn {
-      padding: 10px 12px;
-      font-size: 13px;
+    .station-actions .btn,
+    .station-actions .ghost-btn {
+      min-height: 48px;
     }
 
     .ghost-btn {
-      border-color: #e5e7eb;
-      color: #475569;
-      background: #fff;
-    }
-
-    .weather-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin-top: 14px;
-    }
-
-    .weather-mini {
-      background: #f8fafc;
-      border: 1px solid #e5e7eb;
-      border-radius: 16px;
-      padding: 14px;
-    }
-
-    .weather-mini .label {
-      font-size: 13px;
-      color: #64748b;
-      margin-bottom: 6px;
-    }
-
-    .weather-mini .value {
-      font-size: 22px;
-      font-weight: 800;
-      color: #111827;
-    }
-
-    .chart-summary {
-      margin-top: 12px;
-      color: #64748b;
-      font-size: 14px;
-      line-height: 1.7;
-    }
-
-    #map {
-      width: 100%;
-      min-height: 520px;
-      border-radius: 24px;
-      overflow: hidden;
-      background: #eef2ff;
-      border: 1px solid #e5e7eb;
-    }
-
-    .map-error {
-      min-height: 520px;
-      display: flex;
+      display: inline-flex;
       align-items: center;
       justify-content: center;
-      text-align: center;
-      padding: 24px;
-      color: #991b1b;
-      background: #fef2f2;
-      border: 1px solid #fecaca;
-      border-radius: 24px;
-      line-height: 1.8;
+      gap: 10px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px 16px;
       font-weight: 700;
+      cursor: pointer;
+      background: #fff;
+      color: var(--text);
+      text-decoration: none;
+      box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+      transition: 0.15s ease;
     }
 
-    @media (max-width: 720px) {
-      .topbar-actions,
-      .weather-grid,
-      .chart-toolbar,
-      .station-actions {
-        width: 100%;
-      }
+    .ghost-btn:hover {
+      transform: translateY(-1px);
+      background: var(--bg);
+    }
 
-      .weather-grid {
+    /* AI assistant */
+    .ai-chat-messages {
+      height: 230px;
+      overflow-y: auto;
+      border-radius: var(--r-lg);
+      border: 1px solid var(--line);
+      background: var(--bg);
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .ai-message {
+      max-width: 90%;
+      padding: 10px 13px;
+      border-radius: 14px;
+      font-size: 13.5px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .ai-message-bot {
+      align-self: flex-start;
+      background: var(--brand-pale);
+      color: #1e3a8a;
+      border: 1px solid var(--brand-border);
+      border-bottom-left-radius: 4px;
+    }
+
+    .ai-message-user {
+      align-self: flex-end;
+      background: #dbeafe;
+      color: var(--text);
+      border: 1px solid #93c5fd;
+      border-bottom-right-radius: 4px;
+    }
+
+    .ai-chat-form {
+      display: flex;
+      gap: 8px;
+    }
+
+    .ai-chat-input {
+      flex: 1;
+      min-width: 0;
+      padding: 10px 14px;
+      border: 1.5px solid var(--line);
+      border-radius: var(--r-pill);
+      font-family: inherit;
+      font-size: 13.5px;
+      color: var(--text);
+      background: #fff;
+      outline: none;
+      transition: 0.15s;
+    }
+
+    .ai-chat-input:focus {
+      border-color: var(--brand-mid);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.10);
+    }
+
+    .ai-send-btn {
+      padding: 10px 16px;
+      border-radius: var(--r-pill);
+      border: none;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--brand-mid), var(--brand));
+      color: #fff;
+      cursor: pointer;
+      box-shadow: var(--shadow-brand);
+      transition: 0.15s;
+      flex-shrink: 0;
+    }
+
+    .ai-send-btn:hover { transform: translateY(-1px); }
+    .ai-send-btn:disabled, .ai-chat-input:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .ai-status-text {
+      margin-top: 8px;
+      font-size: 12px;
+      color: var(--muted);
+      min-height: 18px;
+    }
+    
+    .prediction-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 12px;
+    }
+    
+    .prediction-item {
+      background: var(--bg);
+      border: 1px solid var(--line);
+      border-radius: var(--r-lg);
+      padding: 12px;
+    }
+
+    .prediction-hour {
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--brand);
+      margin-bottom: 6px;
+    }
+      
+    .prediction-main {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+      
+    .prediction-sub {
+      font-size: 12.5px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+      
+    .prediction-tag {
+      display: inline-flex;
+      align-items: center;
+      margin-top: 8px;
+      padding: 5px 10px;
+      border-radius: var(--r-pill);
+      font-size: 11.5px;
+      font-weight: 700;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--text-2);
+    }
+      
+    .prediction-actions {
+      margin-top: 14px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+      
+    .prediction-24h {
+      margin-top: 14px;
+      display: grid;
+      gap: 8px;
+    }
+      
+    .prediction-24h-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 12px;
+      border-radius: var(--r-md);
+      border: 1px solid var(--line);
+      background: var(--bg);
+      font-size: 13px;
+    }
+
+    /* Responsive */
+    @media (max-width: 1100px) {
+      .dashboard-layout {
         grid-template-columns: 1fr;
       }
 
-      .search {
-        order: 3;
+      .map-panel {
+        position: static;
+        top: auto;
+        max-height: none;
+        overflow: visible;
+      }
+
+      #map {
+        height: 460px;
+      }
+
+      .station-actions {
+        flex-direction: column;
+      }
+
+      .station-actions .btn,
+      .station-actions .ghost-btn {
         width: 100%;
       }
     }
+
+    @media (max-width: 720px) {
+      .container {
+        padding: 12px;
+      }
+
+      .topbar {
+        position: static;
+        top: auto;
+        padding: 14px;
+        border-radius: 20px;
+      }
+
+      .topbar-right {
+        gap: 6px;
+        width: 100%;
+      }
+
+      .search-wrap {
+        order: 10;
+        max-width: 100%;
+        width: 100%;
+      }
+
+      #map {
+        height: 360px;
+      }
+
+      .map-panel,
+      .sidebar-card {
+        padding: 16px;
+        border-radius: 18px;
+      }
+      
+      .station-meta,
+      .weather-mini-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .ai-chat-form {
+        flex-direction: column;
+      }
+
+      .ai-chat-input,
+      .ai-send-btn,
+      .station-actions .btn,
+      .station-actions .ghost-btn {
+        width: 100%;
+      }
+
+      .prediction-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .prediction-24h-row {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      
+    }
+
   </style>
 </head>
 <body>
   <div class="container">
-    <div class="topbar">
-      <a class="brand" href="{{ url_for('home') }}" aria-label="G8BikeShare Home">
-        <div class="brand-mark">
-          <svg viewBox="0 0 64 64" aria-hidden="true">
-            <defs>
-              <linearGradient id="g8grad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="#60a5fa"></stop>
-                <stop offset="100%" stop-color="#1d4ed8"></stop>
-              </linearGradient>
-            </defs>
-            <rect x="4" y="4" width="56" height="56" rx="16" fill="url(#g8grad)"></rect>
-            <circle cx="21" cy="42" r="8" fill="none" stroke="white" stroke-width="3"></circle>
-            <circle cx="43" cy="42" r="8" fill="none" stroke="white" stroke-width="3"></circle>
-            <path d="M21 42 L28 27 L35 42 L43 42" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>
-            <path d="M28 27 H37" fill="none" stroke="white" stroke-width="3" stroke-linecap="round"></path>
-            <path d="M31 20 C25 20,25 29,31 29 C37 29,37 20,31 20 Z" fill="none" stroke="white" stroke-width="2.4"></path>
-            <path d="M39 20 C33 20,33 29,39 29 C45 29,45 20,39 20 Z" fill="none" stroke="white" stroke-width="2.4"></path>
+
+    <!-- NAV -->
+    <nav class="topbar" role="navigation" aria-label="Main navigation">
+      <a class="g8-brand" href="{{ url_for('home') }}" aria-label="G8BikeShare Home">
+        <div class="g8-brand-mark">
+          <svg viewBox="0 0 22 22" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="5.5" cy="15.5" r="3"/>
+            <circle cx="16.5" cy="15.5" r="3"/>
+            <path d="M5.5 15.5L8.5 8L12 15.5H16.5"/>
+            <path d="M8.5 8H14"/>
           </svg>
         </div>
-        <div class="brand-text">
-          <span class="brand-title"><span class="brand-accent">G8</span>BikeShare</span>
-          <span class="brand-subtitle">Smart Dublin Bike Companion</span>
+        <div class="g8-brand-text">
+          <span class="g8-brand-name"><span class="g8-brand-accent">G8</span>BikeShare</span>
+          <span class="g8-brand-sub">Smart Dublin Bike Companion</span>
         </div>
       </a>
 
-      <div class="search">
-        <input id="stationSearchInput" placeholder="Search station name or address..." />
+      <div class="search-wrap">
+        <input id="stationSearchInput" class="search-input" placeholder="Search station..." aria-label="Search station" />
       </div>
 
-      <div
-        class="weather-pill"
-        id="weather-pill"
-        title="View weather page"
-        onclick="window.location.href='{{ url_for('weather_page') }}'"
-      >
-        <div class="badge">
+      <div class="topbar-right">
+        <div id="sessionPill" class="session-chip">Guest</div>
+
+        <button
+          class="weather-pill"
+          id="weather-pill"
+          aria-label="View weather"
+          onclick="window.location.href='{{ url_for('weather_page') }}'"
+        >
           <span id="wx-icon">☁️</span>
           <span id="wx-temp">--°C</span>
-        </div>
-        <div class="muted" id="wx-pop">Live weather</div>
+          <span class="text-sm" id="wx-pop" style="color:var(--muted);font-weight:600;">Live</span>
+        </button>
+
+        <nav class="g8-nav-links" aria-label="Page links">
+          <a href="{{ url_for('home') }}">Home</a>
+          <a href="{{ url_for('dashboard') }}" class="active" aria-current="page">Dashboard</a>
+          <a href="{{ url_for('journey_planner') }}">Journey</a>
+          <a href="{{ url_for('weather_page') }}">Weather</a>
+          <a href="{{ url_for('about') }}">About</a>
+          <a href="{{ url_for('sign_in') }}">Account</a>
+        </nav>
       </div>
+    </nav>
 
-      <div class="topbar-actions">
-        <div id="sessionPill" class="session-pill">Guest</div>
-        <a class="nav-link-btn" href="{{ url_for('home') }}">Home</a>
-        <a class="nav-solid-btn" href="{{ url_for('dashboard') }}">Dashboard</a>
-        <a class="nav-link-btn" href="{{ url_for('journey_planner') }}">Journey Planner</a>
-        <a class="nav-link-btn" href="{{ url_for('weather_page') }}">Weather</a>
-        <a class="nav-link-btn" href="{{ url_for('about') }}">About</a>
-        <a class="nav-link-btn" href="{{ url_for('sign_in') }}">Account</a>
-      </div>
-    </div>
+    <!-- HERO -->
+    <header class="dashboard-hero">
+      <h1>Dublin Bikes Dashboard</h1>
+      <p>Live station availability, weather conditions, AI-powered advice and 48-hour trends across Dublin.</p>
+    </header>
 
-    <section class="dashboard-hero">
-      <h1>G8BikeShare Dashboard</h1>
-      <p>
-        Explore live station status, current weather, journey support, AI riding advice and 48-hour bike trends across Dublin.
-      </p>
-    </section>
-
+    <!-- MAIN LAYOUT -->
     <main class="dashboard-layout">
-      <section class="map-panel">
-        <div class="panel-title-row">
-          <div class="panel-title">
+
+      <!-- MAP PANEL -->
+      <section class="map-panel" aria-label="Station map">
+        <div class="panel-header">
+          <div>
             <h2>Station Map</h2>
-            <p>Click a marker to view real-time station details, smart advice and historical bike data.</p>
-            <div class="map-meta">
+            <p>Click a marker to see real-time availability, smart advice and historical data.</p>
+            <div class="map-chips">
               <span class="map-chip" id="stationCountChip">Stations: --</span>
-              <span class="map-chip" id="availableBikeChip">Available bikes: --</span>
+              <span class="map-chip" id="availableBikeChip">Bikes available: --</span>
               <span class="map-chip" id="lastRefreshChip">Last refresh: --</span>
             </div>
           </div>
         </div>
+        
+        
+        <div id="map" role="application" aria-label="Interactive station map"></div>
 
-        <div id="map"></div>
 
-        <div class="legend">
-          <span><i class="legend-dot green"></i> Good availability</span>
-          <span><i class="legend-dot orange"></i> Limited bikes</span>
-          <span><i class="legend-dot red"></i> Empty station</span>
-          <span><i class="legend-dot gray"></i> No data</span>
+        <div class="map-legend" role="list" aria-label="Map legend">
+          <span role="listitem"><i class="legend-dot green"></i>Good availability</span>
+          <span role="listitem"><i class="legend-dot orange"></i>Limited bikes</span>
+          <span role="listitem"><i class="legend-dot red"></i>Empty station</span>
+          <span role="listitem"><i class="legend-dot gray"></i>No data</span>
         </div>
       </section>
 
-      <aside class="sidebar">
-        <div class="card" id="station-card">
-          <h2>Station Details</h2>
-          <p>Select a station on the map.</p>
+      <!-- SIDEBAR -->
+      <aside class="sidebar" aria-label="Station details and tools">
+
+        <!-- Station details -->
+        <div class="sidebar-card" id="station-card">
+          <h2 class="sidebar-card-title">Station Details</h2>
+          <p class="text-muted text-sm">Select a station on the map.</p>
         </div>
 
-        <div class="card" id="weather-card">
-          <h2>Current Weather</h2>
-          <p>Loading weather...</p>
+        <!-- Weather -->
+        <div class="sidebar-card" id="weather-card">
+          <h2 class="sidebar-card-title">Current Weather</h2>
+          <p class="text-muted text-sm">Loading weather...</p>
         </div>
 
-        <div class="card chart-card" id="trend-card">
-          <h2>48-Hour Bike Trend</h2>
+        <!-- Prediction -->
+        <div class="sidebar-card" id="prediction-card">
+          <h2 class="sidebar-card-title">Bike & Weather Outlook</h2>
+          <p class="text-muted text-sm">Select a station to view the next 4 hours.</p>
+        </div>
+
+        <!-- 48-hour trend chart -->
+        <div class="sidebar-card" id="trend-card">
+          <h2 class="sidebar-card-title">48-Hour Bike Trend</h2>
           <div class="chart-toolbar">
-            <button class="small-btn active" data-series="occupancy" type="button">Occupancy %</button>
-            <button class="small-btn" data-series="bikes" type="button">Avg bikes</button>
-            <button class="small-btn" data-series="stands" type="button">Avg docks</button>
+            <button class="btn-toggle active" data-series="occupancy" type="button">Occupancy %</button>
+            <button class="btn-toggle" data-series="bikes" type="button">Avg bikes</button>
+            <button class="btn-toggle" data-series="stands" type="button">Avg docks</button>
           </div>
-          <canvas id="historyChart"></canvas>
-          <div class="chart-summary" id="chartSummary">Select a station to view trend insight.</div>
+          <div class="chart-wrap">
+            <canvas id="historyChart" aria-label="48-hour bike trend chart"></canvas>
+          </div>
+          <p class="chart-summary-text" id="chartSummary">Select a station to view trend insight.</p>
         </div>
 
-        <div class="card" id="assistant-card">
-          <h2>Ride Assistant</h2>
-          <div class="assistant-box" id="assistantAdvice">Select a station to get route and riding advice.</div>
-          <div class="assistant-meta" id="assistantMeta">The assistant uses the current station plus live weather and availability data.</div>
-          <div class="station-actions">
-            <button class="small-btn active" id="refreshAdviceBtn" type="button">Refresh advice</button>
+        <!-- Rule-based assistant -->
+        <div class="sidebar-card" id="assistant-card">
+          <h2 class="sidebar-card-title">Ride Assistant</h2>
+          <div class="assistant-box" id="assistantAdvice" aria-live="polite">Select a station to get route and riding advice.</div>
+          <p class="assistant-meta-text" id="assistantMeta">Uses current station plus live weather and availability data.</p>
+          <div class="assistant-actions">
+            <button class="btn-sm active" id="refreshAdviceBtn" type="button">↻ Refresh advice</button>
           </div>
         </div>
 
-        <div class="card ai-card" id="ai-assistant-card">
-          <div class="ai-card-head">
-            <h2>AI Bike Assistant</h2>
-            <p>
-              Ask for bike pickup suggestions, return station ideas, or weather-aware riding advice.
-            </p>
-          </div>
+        <!-- AI assistant -->
+        <div class="sidebar-card" id="ai-assistant-card">
+          <h2 class="sidebar-card-title">AI Bike Assistant</h2>
+          <p class="text-muted text-sm" style="margin-bottom:12px;">Ask about pickup suggestions, return stations, or weather-aware riding advice.</p>
 
-          <div class="ai-chat-messages" id="aiChatMessages">
+          <div class="ai-chat-messages" id="aiChatMessages" role="log" aria-live="polite" aria-label="Chat messages">
             <div class="ai-message ai-message-bot">
-              Hi! Try asking:
-              Which station is good for picking up a bike near the city centre?
+              Hi! Try asking: "Which station is good for picking up a bike near the city centre?"
             </div>
           </div>
 
-          <form id="aiChatForm" class="ai-chat-form">
+          <form id="aiChatForm" class="ai-chat-form" novalidate>
             <input
               id="aiChatInput"
               class="ai-chat-input"
               type="text"
               maxlength="300"
               placeholder="Ask the AI assistant..."
+              aria-label="Message to AI assistant"
               required
             />
-            <button id="aiChatSendBtn" class="ai-send-btn" type="submit">Send</button>
+            <button id="aiChatSendBtn" class="ai-send-btn" type="submit" aria-label="Send message">Send</button>
           </form>
 
-          <div class="ai-chat-status" id="aiChatStatus"></div>
-          <div class="ai-weather-context" id="aiWeatherContext" hidden></div>
+          <p class="ai-status-text" id="aiChatStatus" aria-live="polite"></p>
+          <div id="aiWeatherContext" hidden aria-hidden="true"></div>
         </div>
+
       </aside>
     </main>
   </div>
@@ -350,15 +774,11 @@
   <script src="{{ url_for('static', filename='dashboard.js') }}"></script>
 
   {% if google_maps_api_key %}
-    <script
-      async
-      defer
+    <script async defer
       src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&callback=initGoogleMap&libraries=marker&v=weekly">
     </script>
   {% else %}
-    <script>
-      window.GOOGLE_MAPS_KEY_MISSING = true;
-    </script>
+    <script>window.GOOGLE_MAPS_KEY_MISSING = true;</script>
   {% endif %}
 </body>
 </html>

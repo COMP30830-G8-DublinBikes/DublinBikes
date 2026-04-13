@@ -13,6 +13,10 @@ let selectedSeries = "occupancy";
 let refreshTimer = null;
 let aiChatHistory = [];
 
+let userLocationMarker = null;
+let userLocationAccuracyCircle = null;
+let currentUserLocation = null;
+
 const DEFAULT_CENTER = { lat: 53.3498, lng: -6.2603 };
 const DEFAULT_ZOOM = 13;
 const GOOGLE_TEST_MAP_ID = "DEMO_MAP_ID";
@@ -40,6 +44,9 @@ window.initGoogleMap = function () {
     });
 
     infoWindow = new google.maps.InfoWindow();
+
+    addLocateControl();
+
     resolveMapReady(true);
   } catch (error) {
     console.error("Google Map init failed:", error);
@@ -47,6 +54,229 @@ window.initGoogleMap = function () {
     resolveMapReady(false);
   }
 };
+
+function addLocateControl() {
+  if (!map || !window.google?.maps) return;
+
+  const controlButton = document.createElement("button");
+  controlButton.type = "button";
+  controlButton.className = "locate-me-btn";
+  controlButton.setAttribute("aria-label", "Locate me");
+  controlButton.setAttribute("title", "Locate me");
+  controlButton.innerHTML = "📍";
+
+  controlButton.addEventListener("click", () => {
+    locateUser();
+  });
+
+  const controlWrapper = document.createElement("div");
+  controlWrapper.className = "locate-me-control";
+  controlWrapper.appendChild(controlButton);
+
+  map.controls[google.maps.ControlPosition.INLINE_END_BLOCK_END].push(controlWrapper);
+}
+
+function locateUser() {
+  if (!map) return;
+
+  if (!navigator.geolocation) {
+    showLocationMessage("Your browser does not support geolocation.");
+    return;
+  }
+
+  showLocationMessage("Locating you...");
+
+  navigator.geolocation.getCurrentPosition(
+    async (position) => {
+      const userPos = {
+        lat: position.coords.latitude,
+        lng: position.coords.longitude
+      };
+
+      currentUserLocation = userPos;
+      renderUserLocation(userPos, position.coords.accuracy);
+
+      const bestStation = findNearestAvailableStation(userPos, allStations);
+
+      if (!bestStation) {
+        map.panTo(userPos);
+        map.setZoom(15);
+        showLocationMessage("Your location was found, but no nearby pickup station is available.");
+        return;
+      }
+
+      const stillVisible = displayedStations.some(
+        (station) => Number(station.station_id) === Number(bestStation.station_id)
+      );
+
+      if (!stillVisible) {
+        displayedStations = [...allStations];
+        const searchInput = document.getElementById("stationSearchInput");
+        if (searchInput) searchInput.value = "";
+        renderMarkers(displayedStations, { fitToBounds: false });
+        updateMapSummary(displayedStations);
+      }
+
+      await selectStation(bestStation.station_id, true);
+      zoomToUserAndStation(userPos, bestStation);
+
+      showLocationMessage(
+        `Recommended pickup station: ${safeValue(bestStation.name)} (${formatDistance(bestStation.distance_m)}, about ${formatWalkMinutes(bestStation.distance_m)} walk).`
+      );
+    },
+    (error) => {
+      let message = "Unable to get your location.";
+
+      if (error.code === error.PERMISSION_DENIED) {
+        message = "Location permission was denied.";
+      } else if (error.code === error.POSITION_UNAVAILABLE) {
+        message = "Location information is unavailable.";
+      } else if (error.code === error.TIMEOUT) {
+        message = "Location request timed out.";
+      }
+
+      showLocationMessage(message);
+      console.error("Geolocation error:", error);
+    },
+    {
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 0
+    }
+  );
+}
+
+function findNearestAvailableStation(userPos, stations) {
+  if (!userPos || !Array.isArray(stations) || !stations.length) {
+    return null;
+  }
+
+  let bestStation = null;
+  let minDistance = Number.POSITIVE_INFINITY;
+
+  stations.forEach((station) => {
+    const lat = Number(station.latitude);
+    const lng = Number(station.longitude);
+    const bikes = Number(station.available_bikes || 0);
+    const status = String(station.status || "").toUpperCase();
+
+    if (Number.isNaN(lat) || Number.isNaN(lng)) return;
+    if (bikes <= 0) return;
+    if (status && status !== "OPEN") return;
+
+    const distance = getDistanceMeters(userPos.lat, userPos.lng, lat, lng);
+
+    if (distance < minDistance) {
+      minDistance = distance;
+      bestStation = {
+        ...station,
+        distance_m: distance
+      };
+    }
+  });
+
+  return bestStation;
+}
+
+function getDistanceMeters(lat1, lng1, lat2, lng2) {
+  const toRad = (value) => (value * Math.PI) / 180;
+  const earthRadius = 6371000;
+
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRad(lat1)) *
+      Math.cos(toRad(lat2)) *
+      Math.sin(dLng / 2) *
+      Math.sin(dLng / 2);
+
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  return earthRadius * c;
+}
+
+function formatDistance(distanceMeters) {
+  const meters = Number(distanceMeters || 0);
+
+  if (meters < 1000) {
+    return `${Math.round(meters)} m`;
+  }
+
+  return `${(meters / 1000).toFixed(2)} km`;
+}
+
+function formatWalkMinutes(distanceMeters) {
+  const meters = Number(distanceMeters || 0);
+  const minutes = Math.max(1, Math.round(meters / 1.4 / 60));
+  return `${minutes} min`;
+}
+
+function zoomToUserAndStation(userPos, station) {
+  if (!map || !userPos || !station) return;
+
+  const stationLat = Number(station.latitude);
+  const stationLng = Number(station.longitude);
+
+  if (Number.isNaN(stationLat) || Number.isNaN(stationLng)) return;
+
+  const bounds = new google.maps.LatLngBounds();
+  bounds.extend(userPos);
+  bounds.extend({ lat: stationLat, lng: stationLng });
+
+  map.fitBounds(bounds, 80);
+}
+
+function renderUserLocation(userPos, accuracy = 0) {
+  if (!map || !window.google?.maps) return;
+
+  if (userLocationMarker) {
+    userLocationMarker.setMap(null);
+  }
+
+  if (userLocationAccuracyCircle) {
+    userLocationAccuracyCircle.setMap(null);
+  }
+
+  userLocationMarker = new google.maps.Marker({
+    position: userPos,
+    map,
+    title: "Your current location",
+    icon: {
+      path: google.maps.SymbolPath.CIRCLE,
+      scale: 9,
+      fillColor: "#2563eb",
+      fillOpacity: 1,
+      strokeColor: "#ffffff",
+      strokeWeight: 3
+    }
+  });
+
+  userLocationAccuracyCircle = new google.maps.Circle({
+    strokeColor: "#2563eb",
+    strokeOpacity: 0.35,
+    strokeWeight: 1,
+    fillColor: "#2563eb",
+    fillOpacity: 0.12,
+    map,
+    center: userPos,
+    radius: accuracy
+  });
+}
+
+function showLocationMessage(message) {
+  if (!infoWindow || !map) return;
+
+  infoWindow.setContent(`
+    <div style="min-width:180px; line-height:1.6;">
+      ${escapeHtml(message)}
+    </div>
+  `);
+
+  infoWindow.setPosition(map.getCenter());
+  infoWindow.open(map);
+}
 
 window.gm_authFailure = function () {
   renderMapError("Google Maps authentication failed. Check your API key, referrer restrictions, and billing.");
@@ -290,6 +520,16 @@ function renderWeatherUnavailable() {
   if (popEl) popEl.textContent = "Weather unavailable";
 }
 
+function renderPredictionEmpty(message) {
+  const card = document.getElementById("prediction-card");
+  if (!card) return;
+
+  card.innerHTML = `
+    <h2 class="sidebar-card-title">Bike & Weather Outlook</h2>
+    <p class="text-muted text-sm">${escapeHtml(message)}</p>
+  `;
+}
+
 async function loadStations(initialLoad = false) {
   try {
     let rows = [];
@@ -320,6 +560,7 @@ async function loadStations(initialLoad = false) {
       renderStationEmpty("No station data available yet.");
       renderHistoryEmpty("No historical data available.");
       renderAssistantEmpty("No station selected for assistant advice.");
+      renderPredictionEmpty("No prediction data available.");
       return;
     }
 
@@ -340,7 +581,8 @@ async function loadStations(initialLoad = false) {
       renderStationCard(currentStation);
       await Promise.all([
         loadHistory(selectedStationId),
-        loadAssistantAdvice(selectedStationId)
+        loadAssistantAdvice(selectedStationId),
+        loadPredictions(selectedStationId)
       ]);
     }
   } catch (error) {
@@ -451,10 +693,11 @@ async function selectStation(stationId, openInfoWindowAfterRender = false) {
 
   renderMarkers(displayedStations.length ? displayedStations : allStations, { fitToBounds: false });
   renderStationCard(station);
-
+  
   await Promise.all([
     loadHistory(selectedStationId),
-    loadAssistantAdvice(selectedStationId)
+    loadAssistantAdvice(selectedStationId),
+    loadPredictions(selectedStationId)
   ]);
 
   if (openInfoWindowAfterRender) {
@@ -506,17 +749,42 @@ function renderStationCard(row) {
   const occupancy = capacity > 0 ? Math.round((bikes / capacity) * 100) : 0;
   const statusText = getAvailabilityText(row.available_bikes, row.capacity);
 
-  const directionsUrl =
-    row.latitude != null && row.longitude != null
-      ? `https://www.google.com/maps/dir/?api=1&destination=${row.latitude},${row.longitude}&travelmode=bicycling`
-      : "#";
+  const distanceMeters =
+  currentUserLocation && row.latitude != null && row.longitude != null
+    ? getDistanceMeters(
+        currentUserLocation.lat,
+        currentUserLocation.lng,
+        Number(row.latitude),
+        Number(row.longitude)
+      )
+    : null;
 
+  const distanceHtml =
+  distanceMeters != null
+    ? `<p><strong>Distance from you:</strong> ${formatDistance(distanceMeters)}</p>`
+    : "";
+
+  const walkTimeHtml =
+  distanceMeters != null
+    ? `<p><strong>Estimated walk time:</strong> ${formatWalkMinutes(distanceMeters)}</p>`
+    : "";
+
+  const walkDirectionsUrl =
+  currentUserLocation && row.latitude != null && row.longitude != null
+    ? `https://www.google.com/maps/dir/?api=1&origin=${currentUserLocation.lat},${currentUserLocation.lng}&destination=${row.latitude},${row.longitude}&travelmode=walking`
+    : "#";
+
+  const cycleDirectionsUrl =
+  row.latitude != null && row.longitude != null
+    ? `https://www.google.com/maps/dir/?api=1&destination=${row.latitude},${row.longitude}&travelmode=bicycling`
+    : "#";
+    
   stationCard.innerHTML = `
     <h2>${escapeHtml(safeValue(row.name))}</h2>
     <p>${escapeHtml(safeValue(row.address))}</p>
 
     <div class="station-status">${escapeHtml(statusText)}</div>
-
+    
     <div class="station-meta">
       <div class="metric-box">
         <div class="label">Bikes Available</div>
@@ -528,6 +796,9 @@ function renderStationCard(row) {
       </div>
     </div>
 
+    ${distanceHtml}
+    ${walkTimeHtml}
+
     <p><strong>Total Capacity:</strong> ${safeValue(row.capacity)}</p>
     <p><strong>Occupancy:</strong> ${occupancy}%</p>
     <p><strong>Status:</strong> ${escapeHtml(safeValue(row.status))}</p>
@@ -536,7 +807,12 @@ function renderStationCard(row) {
     <p><strong>Electrical Bikes:</strong> ${safeValue(row.electrical_bikes)}</p>
 
     <div class="station-actions">
-      <a class="btn" href="${directionsUrl}" target="_blank" rel="noopener noreferrer">Navigate with Google Maps</a>
+      ${
+        distanceMeters != null
+          ? `<a class="btn" href="${walkDirectionsUrl}" target="_blank" rel="noopener noreferrer">Walk to this station</a>`
+          : ""
+      }
+      <a class="btn" href="${cycleDirectionsUrl}" target="_blank" rel="noopener noreferrer">Open in Google Maps</a>
       <button class="ghost-btn" type="button" id="openJourneyPlannerBtn">Open journey planner</button>
     </div>
   `;
@@ -567,6 +843,100 @@ async function loadHistory(stationId) {
   } catch (error) {
     console.error("History load failed:", error);
     renderHistoryEmpty("Failed to load historical data.");
+  }
+}
+
+async function loadPredictions(stationId, hours = 24) {
+  try {
+    const response = await fetch(`/api/predict/station/${stationId}?hours=${hours}`);
+    const result = await response.json();
+
+    if (!response.ok || !result.ok) {
+      renderPredictionEmpty(result.error || "Prediction data unavailable.");
+      return;
+    }
+
+    renderPredictionCard(result);
+  } catch (error) {
+    console.error("Prediction load failed:", error);
+    renderPredictionEmpty("Failed to load prediction data.");
+  }
+}
+
+function renderPredictionCard(result) {
+  const card = document.getElementById("prediction-card");
+  if (!card) return;
+
+  const predictions = result.predictions || [];
+  if (!predictions.length) {
+    renderPredictionEmpty("No prediction data available.");
+    return;
+  }
+
+  const shortList = predictions.slice(0, 4);
+  const longList = predictions.slice(0, 24);
+
+  const shortHtml = shortList.map((item) => {
+    const rainText = item.rain_prob != null
+      ? `${Math.round(Number(item.rain_prob) * 100)}% rain`
+      : "Rain N/A";
+
+    const tag = getPredictionTag(item.predicted_bikes, item.predicted_docks, item.capacity);
+
+    return `
+      <div class="prediction-item">
+        <div class="prediction-hour">In ${item.hour_offset} hour${item.hour_offset > 1 ? "s" : ""}</div>
+        <div class="prediction-main">${escapeHtml(safeValue(item.weather_description))}</div>
+        <div class="prediction-sub">
+          Temp: ${safeValue(item.temp)}°C<br>
+          ${rainText}<br>
+          Bikes: ${safeValue(item.predicted_bikes)}<br>
+          Docks: ${safeValue(item.predicted_docks)}
+        </div>
+        <div class="prediction-tag">${escapeHtml(tag)}</div>
+      </div>
+    `;
+  }).join("");
+
+  const longHtml = longList.map((item) => `
+    <div class="prediction-24h-row">
+      <span>+${item.hour_offset}h</span>
+      <span>${escapeHtml(safeValue(item.weather_main))}</span>
+      <span>${safeValue(item.temp)}°C</span>
+      <span>${safeValue(item.predicted_bikes)} bikes</span>
+      <span>${safeValue(item.predicted_docks)} docks</span>
+    </div>
+  `).join("");
+
+  card.innerHTML = `
+    <h2 class="sidebar-card-title">Bike & Weather Outlook</h2>
+    <p class="text-muted text-sm">
+      Estimated availability for ${escapeHtml(safeValue(result.station_name))} over the next few hours.
+    </p>
+
+    <div class="prediction-grid">
+      ${shortHtml}
+    </div>
+
+    <div class="prediction-actions">
+      <button class="btn-sm-outline" type="button" id="toggle24hPredictionsBtn">View 24h outlook</button>
+    </div>
+
+    <div class="prediction-24h hidden" id="prediction24hWrap">
+      ${longHtml}
+    </div>
+  `;
+
+  const toggleBtn = document.getElementById("toggle24hPredictionsBtn");
+  const wrap = document.getElementById("prediction24hWrap");
+
+  if (toggleBtn && wrap) {
+    toggleBtn.addEventListener("click", () => {
+      wrap.classList.toggle("hidden");
+      toggleBtn.textContent = wrap.classList.contains("hidden")
+        ? "View 24h outlook"
+        : "Hide 24h outlook";
+    });
   }
 }
 
@@ -995,6 +1365,18 @@ function getAvailabilityText(availableBikes, capacity) {
   const ratio = Number(availableBikes) / Number(capacity);
   if (ratio < 0.3) return "Limited availability";
   return "Good availability";
+}
+
+function getPredictionTag(bikes, docks, capacity) {
+  const bikeNum = Number(bikes || 0);
+  const dockNum = Number(docks || 0);
+  const capNum = Number(capacity || 0);
+
+  if (capNum <= 0) return "No prediction";
+  if (bikeNum <= 3) return "Low bike availability";
+  if (dockNum <= 2) return "Better for pickup";
+  if (bikeNum / capNum >= 0.5) return "Good to pick up";
+  return "Balanced availability";
 }
 
 function getWeatherEmoji(main, description) {

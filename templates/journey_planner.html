@@ -6,421 +6,186 @@
   <title>Journey Planner – G8BikeShare</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
   <style>
-    .planner-page {
-      min-height: 100vh;
-      background:
-        radial-gradient(circle at top right, rgba(59, 130, 246, 0.10), transparent 28%),
-        radial-gradient(circle at left center, rgba(37, 99, 235, 0.08), transparent 22%),
-        #f5f7fb;
+    body {
+      background: var(--bg);
     }
-
-    .planner-shell {
-      max-width: 1180px;
-      margin: 0 auto;
-      padding: 24px 20px 56px;
-    }
-
-    .planner-nav {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      flex-wrap: wrap;
-      background: rgba(255, 255, 255, 0.95);
-      border: 1px solid #e5e7eb;
-      border-radius: 24px;
-      padding: 16px 20px;
-      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
-      margin-bottom: 28px;
-    }
-
-    .planner-brand {
-      display: inline-flex;
-      align-items: center;
-      gap: 14px;
-      text-decoration: none;
-      color: #0f172a;
-      min-width: fit-content;
-    }
-
-    .planner-brand-mark {
-      width: 54px;
-      height: 54px;
-      display: grid;
-      place-items: center;
-      border-radius: 16px;
-      box-shadow: 0 12px 28px rgba(37, 99, 235, 0.18);
-      flex-shrink: 0;
-    }
-
-    .planner-brand-mark svg {
-      width: 54px;
-      height: 54px;
-      display: block;
-    }
-
-    .planner-brand-text {
-      display: flex;
-      flex-direction: column;
-      line-height: 1;
-    }
-
-    .planner-brand-title {
-      font-size: 2rem;
-      font-weight: 900;
-      letter-spacing: -0.04em;
-      color: #0f172a;
-    }
-
-    .planner-brand-accent {
-      color: #2563eb;
-    }
-
-    .planner-brand-subtitle {
-      margin-top: 6px;
-      font-size: 12px;
-      font-weight: 700;
-      color: #64748b;
-      letter-spacing: 0.02em;
-    }
-
-    .planner-nav-actions {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
-    .planner-btn,
-    .planner-btn-outline {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 999px;
-      padding: 12px 18px;
-      font-weight: 800;
-      text-decoration: none;
-      transition: 0.2s ease;
-      white-space: nowrap;
-    }
-
-    .planner-btn {
-      background: linear-gradient(135deg, #2563eb, #1d4ed8);
-      color: #fff;
-      box-shadow: 0 10px 24px rgba(37, 99, 235, 0.25);
-    }
-
-    .planner-btn-outline {
-      background: #fff;
-      color: #1d4ed8;
-      border: 1px solid #c7d2fe;
-    }
-
-    .planner-btn:hover,
-    .planner-btn-outline:hover {
-      transform: translateY(-1px);
-    }
-
-    .page-head {
-      margin-bottom: 22px;
-    }
-
-    .page-head h1 {
-      margin: 0 0 10px;
-      font-size: 54px;
-      line-height: 1.05;
-      letter-spacing: -0.03em;
-      color: #111827;
-    }
-
-    .page-head p {
-      margin: 0;
-      color: #64748b;
-      font-size: 18px;
-      line-height: 1.7;
-      max-width: 860px;
-    }
-
+    
     .planner-layout {
       display: grid;
-      grid-template-columns: 1.1fr 0.9fr;
-      gap: 24px;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
       align-items: start;
     }
-
-    .planner-card,
-    .info-card,
-    .result-card {
-      background: rgba(255, 255, 255, 0.96);
-      border: 1px solid #e5e7eb;
-      border-radius: 28px;
-      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
-    }
-
-    .planner-card,
-    .info-card,
-    .result-card {
+    .planner-card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--r-2xl);
       padding: 26px;
+      box-shadow: var(--shadow-lg);
     }
-
-    .planner-card h2,
-    .info-card h2,
-    .result-card h2 {
-      margin: 0 0 12px;
-      font-size: 28px;
-      color: #111827;
+    .planner-card h2 { margin: 0 0 6px; font-size: 22px; font-weight: 800; letter-spacing: -0.02em; color: var(--text); }
+    .planner-card > p { margin: 0 0 20px; font-size: 14px; color: var(--muted); line-height: 1.6; }
+    .planner-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 18px; }
+    .planner-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+    .btn-location {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 10px 18px; border-radius: var(--r-pill);
+      border: 1.5px solid var(--line); background: #fff;
+      font-family: inherit; font-size: 13.5px; font-weight: 700;
+      color: var(--text-2); cursor: pointer; transition: 0.15s; white-space: nowrap;
     }
-
-    .planner-card p,
-    .info-card p,
-    .result-card p {
-      margin: 0;
-      color: #64748b;
-      line-height: 1.7;
+    .btn-location:hover { border-color: var(--brand-border); color: var(--brand); background: var(--brand-pale); }
+    .btn-open-route {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 10px 20px; border-radius: var(--r-pill); border: none;
+      background: linear-gradient(135deg, var(--brand-mid), var(--brand));
+      color: #fff; font-family: inherit; font-size: 13.5px; font-weight: 700;
+      cursor: pointer; box-shadow: var(--shadow-brand); transition: 0.15s; white-space: nowrap;
     }
-
-    .planner-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-      margin-top: 18px;
+    .btn-open-route:hover { transform: translateY(-1px); }
+    .planner-result {
+      margin-top: 18px; padding: 16px 18px;
+      border-radius: var(--r-lg); background: var(--bg);
+      border: 1px solid var(--line); font-size: 14px;
+      line-height: 1.75; color: var(--text-2); min-height: 64px;
     }
-
-    .form-group {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
+    .planner-result strong { color: var(--text); }
+    .side-stack { display: flex; flex-direction: column; gap: 16px; }
+    .info-card {
+      background: var(--surface); border: 1px solid var(--line);
+      border-radius: var(--r-xl); padding: 22px; box-shadow: var(--shadow-md);
     }
-
-    .form-group label {
-      color: #475569;
-      font-weight: 700;
-      font-size: 14px;
+    .info-card h2 { margin: 0 0 6px; font-size: 18px; font-weight: 800; letter-spacing: -0.02em; color: var(--text); }
+    .info-card > p { margin: 0 0 16px; font-size: 13.5px; color: var(--muted); line-height: 1.6; }
+    .steps-list { display: flex; flex-direction: column; gap: 10px; }
+    .step-item {
+      display: flex; gap: 12px; align-items: flex-start;
+      padding: 14px; background: var(--bg);
+      border: 1px solid var(--line); border-radius: var(--r-lg);
     }
-
-    .planner-card input,
-    .planner-card select,
-    .planner-card button {
-      width: 100%;
-      padding: 13px 14px;
-      border-radius: 16px;
-      border: 1px solid #d1d5db;
-      font-size: 14px;
-      box-sizing: border-box;
+    .step-num {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--brand-mid), var(--brand));
+      color: #fff; font-size: 12px; font-weight: 800;
+      display: grid; place-items: center; flex-shrink: 0;
     }
-
-    .planner-card input:focus,
-    .planner-card select:focus {
-      outline: none;
-      border-color: #2563eb;
-      box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.10);
+    .step-body strong { display: block; font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 2px; }
+    .step-body span { font-size: 13px; color: var(--muted); line-height: 1.5; }
+    .note-card {
+      background: var(--brand-pale); border: 1px solid var(--brand-border);
+      border-radius: var(--r-xl); padding: 18px 20px;
     }
-
-    .planner-card button {
-      border: none;
-      cursor: pointer;
-      background: linear-gradient(135deg, #2563eb, #1d4ed8);
-      color: #fff;
-      font-weight: 800;
-      transition: 0.2s ease;
-    }
-
-    .planner-card button:hover {
-      transform: translateY(-1px);
-    }
-
-    .planner-actions {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-      margin-top: 18px;
-    }
-
-    .planner-actions button {
-      width: auto;
-      min-width: 200px;
-    }
-
-    .result-box {
-      margin-top: 18px;
-      padding: 18px;
-      border-radius: 18px;
-      background: #f8fafc;
-      border: 1px solid #e5e7eb;
-      line-height: 1.8;
-      color: #334155;
-    }
-
-    .info-list {
-      display: grid;
-      gap: 14px;
-      margin-top: 18px;
-    }
-
-    .info-item {
-      background: #f8fafc;
-      border: 1px solid #e5e7eb;
-      border-radius: 18px;
-      padding: 16px;
-    }
-
-    .info-item strong {
-      display: block;
-      margin-bottom: 6px;
-      color: #111827;
-      font-size: 16px;
-    }
-
-    .muted {
-      color: #6b7280;
-    }
-
-    @media (max-width: 980px) {
-      .planner-layout {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    @media (max-width: 720px) {
-      .planner-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .page-head h1 {
-        font-size: 40px;
-      }
-
-      .planner-actions button {
-        width: 100%;
-      }
-
-      .planner-brand-mark,
-      .planner-brand-mark svg {
-        width: 46px;
-        height: 46px;
-      }
-
-      .planner-brand-title {
-        font-size: 1.6rem;
-      }
-
-      .planner-brand-subtitle {
-        font-size: 11px;
-      }
-
-      .planner-card,
-      .info-card,
-      .result-card {
-        border-radius: 22px;
-        padding: 22px;
-      }
+    .note-card h3 { margin: 0 0 6px; font-size: 15px; font-weight: 800; color: var(--brand); }
+    .note-card p { margin: 0; font-size: 13.5px; color: var(--text-2); line-height: 1.7; }
+    @media (max-width: 900px) { .planner-layout { grid-template-columns: 1fr; } }
+    @media (max-width: 600px) {
+      .planner-inputs { grid-template-columns: 1fr; }
+      .planner-actions { flex-direction: column; }
+      .btn-location, .btn-open-route { width: 100%; justify-content: center; }
     }
   </style>
 </head>
 <body>
-  <div class="planner-page">
-    <div class="planner-shell">
-      <nav class="planner-nav">
-        <a class="planner-brand" href="{{ url_for('home') }}" aria-label="G8BikeShare Home">
-          <div class="planner-brand-mark">
-            <svg viewBox="0 0 64 64" aria-hidden="true">
-              <defs>
-                <linearGradient id="g8plannergrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stop-color="#60a5fa"></stop>
-                  <stop offset="100%" stop-color="#1d4ed8"></stop>
-                </linearGradient>
-              </defs>
-              <rect x="4" y="4" width="56" height="56" rx="16" fill="url(#g8plannergrad)"></rect>
-              <circle cx="21" cy="42" r="8" fill="none" stroke="white" stroke-width="3"></circle>
-              <circle cx="43" cy="42" r="8" fill="none" stroke="white" stroke-width="3"></circle>
-              <path d="M21 42 L28 27 L35 42 L43 42" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>
-              <path d="M28 27 H37" fill="none" stroke="white" stroke-width="3" stroke-linecap="round"></path>
-              <path d="M31 20 C25 20,25 29,31 29 C37 29,37 20,31 20 Z" fill="none" stroke="white" stroke-width="2.4"></path>
-              <path d="M39 20 C33 20,33 29,39 29 C45 29,45 20,39 20 Z" fill="none" stroke="white" stroke-width="2.4"></path>
-            </svg>
-          </div>
-          <div class="planner-brand-text">
-            <span class="planner-brand-title"><span class="planner-brand-accent">G8</span>BikeShare</span>
-            <span class="planner-brand-subtitle">Smart Dublin Bike Companion</span>
-          </div>
-        </a>
+  <div class="page-shell">
 
-        <div class="planner-nav-actions">
-          <a class="planner-btn-outline" href="{{ url_for('home') }}">Home</a>
-          <a class="planner-btn-outline" href="{{ url_for('dashboard') }}">Dashboard</a>
-          <a class="planner-btn-outline" href="{{ url_for('weather_page') }}">Weather</a>
-          <a class="planner-btn-outline" href="{{ url_for('about') }}">About</a>
-          <a class="planner-btn" href="{{ url_for('sign_in') }}">Account</a>
+    <nav class="g8-nav" role="navigation" aria-label="Main navigation">
+      <a class="g8-brand" href="{{ url_for('home') }}" aria-label="G8BikeShare Home">
+        <div class="g8-brand-mark">
+          <svg viewBox="0 0 22 22" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="5.5" cy="15.5" r="3"/>
+            <circle cx="16.5" cy="15.5" r="3"/>
+            <path d="M5.5 15.5L8.5 8L12 15.5H16.5"/>
+            <path d="M8.5 8H14"/>
+          </svg>
         </div>
+        <div class="g8-brand-text">
+          <span class="g8-brand-name"><span class="g8-brand-accent">G8</span>BikeShare</span>
+          <span class="g8-brand-sub">Smart Dublin Bike Companion</span>
+        </div>
+      </a>
+      <nav class="g8-nav-links" aria-label="Page links">
+        <a href="{{ url_for('home') }}">Home</a>
+        <a href="{{ url_for('dashboard') }}">Dashboard</a>
+        <a href="{{ url_for('journey_planner') }}" class="active" aria-current="page">Journey</a>
+        <a href="{{ url_for('weather_page') }}">Weather</a>
+        <a href="{{ url_for('about') }}">About</a>
+        <a href="{{ url_for('sign_in') }}">Account</a>
       </nav>
+      <div class="g8-nav-actions">
+        <a class="btn" href="{{ url_for('dashboard') }}">Dashboard</a>
+      </div>
+    </nav>
 
-      <header class="page-head">
-        <h1>Journey Planner</h1>
-        <p>
-          Choose a station, set a destination, and open cycling directions directly in Google Maps.
-          You can also use your current location to start the route from where you are now.
-        </p>
-      </header>
+    <header style="margin-bottom:24px;">
+      <div class="pill pill-blue" style="margin-bottom:12px;">🗺️ Cycling directions</div>
+      <h1 class="page-title">Journey Planner</h1>
+      <p style="color:var(--muted);font-size:16px;line-height:1.7;max-width:640px;margin:0;">
+        Choose a station, enter a destination, and open Google Maps cycling directions instantly.
+      </p>
+    </header>
 
-      <main class="planner-layout">
-        <section class="planner-card">
-          <h2>Plan your ride</h2>
-          <p>Select a preferred station and destination to generate a cycling route.</p>
+    <main class="planner-layout">
+      <section class="planner-card">
+        <h2>Plan your ride</h2>
+        <p>Select a station and destination to generate a cycling route.</p>
 
-          <div class="planner-grid">
-            <div class="form-group">
-              <label for="destination">Destination</label>
-              <input id="destination" type="text" placeholder="e.g. Trinity College Dublin" />
-            </div>
-
-            <div class="form-group">
-              <label for="stationSelect">Preferred station</label>
-              <select id="stationSelect">
-                <option value="">Loading stations...</option>
-              </select>
-            </div>
+        <div class="planner-inputs">
+          <div class="form-group">
+            <label class="form-label" for="stationSelect">Preferred station</label>
+            <select id="stationSelect" class="form-select">
+              <option value="">Loading stations...</option>
+            </select>
           </div>
-
-          <div class="planner-actions">
-            <button id="useLocationBtn" type="button">Use My Current Location</button>
-            <button id="openRouteBtn" type="button">Open Route in Google Maps</button>
+          <div class="form-group">
+            <label class="form-label" for="destination">Destination</label>
+            <input id="destination" class="form-input" type="text" placeholder="e.g. Trinity College Dublin" />
           </div>
+        </div>
 
-          <div class="result-box" id="plannerResult">
-            Select a station and destination to plan your journey.
+        <div class="planner-actions">
+          <button class="btn-location" id="useLocationBtn" type="button">📍 Use my location</button>
+          <button class="btn-open-route" id="openRouteBtn" type="button">Open in Google Maps →</button>
+        </div>
+
+        <div class="planner-result" id="plannerResult" aria-live="polite">
+          Select a station and destination to plan your journey.
+        </div>
+      </section>
+
+      <aside class="side-stack">
+        <section class="info-card">
+          <h2>How to use it</h2>
+          <p>Quick steps to get cycling directions.</p>
+          <div class="steps-list">
+            <div class="step-item">
+              <div class="step-num">1</div>
+              <div class="step-body">
+                <strong>Choose a station</strong>
+                <span>Pick one with enough available bikes and docks for your ride.</span>
+              </div>
+            </div>
+            <div class="step-item">
+              <div class="step-num">2</div>
+              <div class="step-body">
+                <strong>Add your destination</strong>
+                <span>Enter any address or place name in Dublin.</span>
+              </div>
+            </div>
+            <div class="step-item">
+              <div class="step-num">3</div>
+              <div class="step-body">
+                <strong>Open directions</strong>
+                <span>Google Maps opens with bicycling mode already selected.</span>
+              </div>
+            </div>
           </div>
         </section>
-
-        <aside>
-          <section class="info-card">
-            <h2>How to use it</h2>
-            <p>This tool is designed to make route planning quick and practical.</p>
-
-            <div class="info-list">
-              <div class="info-item">
-                <strong>1. Choose a station</strong>
-                Pick a station with a suitable number of available bikes.
-              </div>
-              <div class="info-item">
-                <strong>2. Add your destination</strong>
-                Enter any place or address you want to cycle to.
-              </div>
-              <div class="info-item">
-                <strong>3. Open directions</strong>
-                Launch Google Maps with bicycling mode already selected.
-              </div>
-            </div>
-          </section>
-
-          <section class="result-card" style="margin-top: 20px;">
-            <h2>Planning note</h2>
-            <p class="muted">
-              If you use your current location, the route starts from where you are now.
-              Otherwise, it starts from the selected station location.
-            </p>
-          </section>
-        </aside>
-      </main>
-    </div>
+        <div class="note-card">
+          <h3>📌 Planning note</h3>
+          <p>If you use your current location, the route starts from where you are now. Otherwise it starts from the selected station.</p>
+        </div>
+      </aside>
+    </main>
   </div>
 
   <script>
@@ -432,18 +197,18 @@
         const res = await fetch("/api/bike/all");
         const result = await res.json();
         stations = result.rows || [];
-
         const select = document.getElementById("stationSelect");
         select.innerHTML = '<option value="">Choose a station...</option>';
-
-        stations.forEach((station) => {
-          const option = document.createElement("option");
-          option.value = station.station_id;
-          option.textContent = `${station.name} (${station.available_bikes ?? 0} bikes)`;
-          select.appendChild(option);
+        stations.forEach((s) => {
+          const opt = document.createElement("option");
+          opt.value = s.station_id;
+          const bikes = s.available_bikes ?? 0;
+          const docks = s.available_bike_stands ?? 0;
+          opt.textContent = `${s.name} — ${bikes} bikes · ${docks} docks`;
+          select.appendChild(opt);
         });
-      } catch (error) {
-        document.getElementById("plannerResult").textContent = "Failed to load station list.";
+      } catch {
+        setResult("Failed to load station list. Please refresh.");
       }
     }
 
@@ -452,55 +217,42 @@
       return stations.find((s) => String(s.station_id) === String(id));
     }
 
-    document.getElementById("useLocationBtn").addEventListener("click", () => {
-      if (!navigator.geolocation) {
-        document.getElementById("plannerResult").textContent = "Geolocation is not supported in this browser.";
-        return;
-      }
+    function setResult(html) {
+      document.getElementById("plannerResult").innerHTML = html;
+    }
 
+    document.getElementById("useLocationBtn").addEventListener("click", () => {
+      if (!navigator.geolocation) { setResult("Geolocation is not supported in this browser."); return; }
       navigator.geolocation.getCurrentPosition(
         (pos) => {
-          userCoords = {
-            lat: pos.coords.latitude,
-            lng: pos.coords.longitude
-          };
-          document.getElementById("plannerResult").textContent =
-            `Current location captured: ${userCoords.lat.toFixed(5)}, ${userCoords.lng.toFixed(5)}`;
+          userCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+          setResult(`<strong>📍 Location captured:</strong> ${userCoords.lat.toFixed(5)}, ${userCoords.lng.toFixed(5)}`);
         },
-        () => {
-          document.getElementById("plannerResult").textContent = "Unable to get your current location.";
-        }
+        () => setResult("Unable to access your location. Please allow location access.")
       );
     });
 
     document.getElementById("openRouteBtn").addEventListener("click", () => {
-      const destinationText = document.getElementById("destination").value.trim();
+      const dest = document.getElementById("destination").value.trim();
       const station = getSelectedStation();
-
-      if (!station) {
-        document.getElementById("plannerResult").textContent = "Please choose a station first.";
-        return;
-      }
-
-      if (!destinationText) {
-        document.getElementById("plannerResult").textContent = "Please enter a destination.";
-        return;
-      }
+      if (!station) { setResult("Please choose a station first."); return; }
+      if (!dest)    { setResult("Please enter a destination."); return; }
 
       const origin = userCoords
         ? `${userCoords.lat},${userCoords.lng}`
         : `${station.latitude},${station.longitude}`;
 
-      const stationSummary = `${station.name} — ${station.available_bikes ?? 0} bikes, ${station.available_bike_stands ?? 0} docks available.`;
+      const mapsUrl = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(dest)}&travelmode=bicycling`;
+      const dashUrl = `/dashboard`;
 
-      document.getElementById("plannerResult").innerHTML = `
-        <strong>Selected station:</strong> ${stationSummary}<br>
-        <strong>Destination:</strong> ${destinationText}<br>
-        Opening Google Maps cycling directions...
-      `;
-
-      const url = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destinationText)}&travelmode=bicycling`;
-      window.open(url, "_blank");
+      setResult(`
+        <strong>Station:</strong> ${station.name} — ${station.available_bikes ?? 0} bikes, ${station.available_bike_stands ?? 0} docks available.<br>
+        <strong>Destination:</strong> ${dest}<br>
+        <span style="color:var(--brand);font-weight:600;">Opening Google Maps cycling directions...</span>
+        <br><br>
+        <a href="${dashUrl}" style="color:var(--brand);font-weight:700;font-size:13px;">← Back to station map</a>
+      `);
+      window.open(mapsUrl, "_blank");
     });
 
     loadStations();
