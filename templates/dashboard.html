@@ -591,7 +591,7 @@
 
   {% if google_maps_api_key %}
     <script async defer
-      src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&callback=initGoogleMap&libraries=marker&v=weekly">
+      src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&callback=initGoogleMap&libraries=marker&v=weekly&language=en&region=IE">
     </script>
   {% else %}
     <script>window.GOOGLE_MAPS_KEY_MISSING = true;</script>
