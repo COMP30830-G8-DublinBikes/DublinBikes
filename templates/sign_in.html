@@ -5,310 +5,45 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Account – G8BikeShare</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
-  <style>
-    body {
-      background: var(--bg);
-    }
-
-    .auth-layout {
-      min-height: calc(100vh - 180px);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px 0 10px;
-    }
-
-    .auth-card {
-      width: 100%;
-      max-width: 560px;
-      background: var(--surface);
-      border: 1px solid var(--line);
-      border-radius: var(--r-2xl);
-      padding: 28px;
-      box-shadow: var(--shadow-lg);
-    }
-
-    .auth-switch {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      background: var(--bg);
-      border: 1px solid var(--line);
-      border-radius: var(--r-lg);
-      padding: 6px;
-      margin-bottom: 22px;
-    }
-
-    .auth-switch button {
-      border: none;
-      background: transparent;
-      border-radius: var(--r-md);
-      padding: 10px 16px;
-      font-family: inherit;
-      font-size: 14px;
-      font-weight: 700;
-      cursor: pointer;
-      color: var(--muted);
-      transition: 0.15s;
-    }
-
-    .auth-switch button.active {
-      background: linear-gradient(135deg, var(--brand-mid), var(--brand));
-      color: #fff;
-      box-shadow: 0 4px 12px rgba(37,99,235,0.20);
-    }
-
-    .auth-card h2 {
-      margin: 0 0 6px;
-      font-size: 28px;
-      font-weight: 800;
-      color: var(--text);
-      letter-spacing: -0.02em;
-    }
-
-    .auth-card .subtext {
-      margin: 0 0 22px;
-      color: var(--muted);
-      font-size: 15px;
-      line-height: 1.7;
-    }
-
-    .primary-submit {
-      width: 100%;
-      border: none;
-      border-radius: var(--r-lg);
-      padding: 13px 18px;
-      font-family: inherit;
-      font-size: 15px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: 0.15s;
-      background: linear-gradient(135deg, var(--brand-mid), var(--brand));
-      color: #fff;
-      box-shadow: var(--shadow-brand);
-      margin-top: 8px;
-    }
-
-    .primary-submit:hover {
-      transform: translateY(-1px);
-    }
-
-    .primary-submit:disabled {
-      opacity: 0.65;
-      cursor: not-allowed;
-      transform: none;
-    }
-
-    .message-box {
-      display: none;
-      margin-top: 14px;
-      padding: 12px 14px;
-      border-radius: var(--r-lg);
-      font-size: 14px;
-      line-height: 1.6;
-      border: 1px solid transparent;
-    }
-
-    .message-box.success {
-      display: block;
-      background: var(--green-pale);
-      color: #166534;
-      border-color: var(--green-border);
-    }
-
-    .message-box.error {
-      display: block;
-      background: var(--red-pale);
-      color: #991b1b;
-      border-color: var(--red-border);
-    }
-
-    .hidden {
-      display: none;
-    }
-
-    /* Nav avatar */
-    .g8-nav-actions {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      position: relative;
-    }
-
-    .nav-avatar-wrap {
-      position: relative;
-    }
-
-    .nav-avatar-btn {
-      width: 44px;
-      height: 44px;
-      border-radius: 50%;
-      border: 1px solid var(--line);
-      background: #d1d5db;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      overflow: hidden;
-      transition: 0.15s ease;
-      box-shadow: var(--shadow-sm);
-      padding: 0;
-    }
-
-    .nav-avatar-btn:hover {
-      transform: translateY(-1px);
-      box-shadow: var(--shadow-md);
-    }
-
-    .nav-avatar-btn img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-    }
-
-    .nav-avatar-icon {
-      width: 22px;
-      height: 22px;
-      color: #6b7280;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .nav-avatar-menu {
-      position: absolute;
-      top: calc(100% + 10px);
-      right: 0;
-      min-width: 190px;
-      background: var(--surface);
-      border: 1px solid var(--line);
-      border-radius: var(--r-lg);
-      box-shadow: var(--shadow-lg);
-      padding: 10px;
-      display: none;
-      z-index: 50;
-    }
-
-    .nav-avatar-menu.open {
-      display: block;
-    }
-
-    .nav-avatar-user {
-      padding: 8px 10px 10px;
-      border-bottom: 1px solid var(--line);
-      margin-bottom: 8px;
-    }
-
-    .nav-avatar-user strong {
-      display: block;
-      font-size: 14px;
-      color: var(--text);
-      margin-bottom: 2px;
-    }
-
-    .nav-avatar-user span {
-      font-size: 12px;
-      color: var(--muted);
-    }
-
-    .nav-avatar-link,
-    .nav-avatar-action {
-      width: 100%;
-      display: block;
-      text-align: left;
-      background: transparent;
-      border: none;
-      border-radius: var(--r-md);
-      padding: 10px 12px;
-      font: inherit;
-      font-size: 14px;
-      font-weight: 600;
-      color: var(--text);
-      text-decoration: none;
-      cursor: pointer;
-    }
-
-    .nav-avatar-link:hover,
-    .nav-avatar-action:hover {
-      background: var(--bg);
-    }
-
-    @media (max-width: 720px) {
-      .auth-layout {
-        min-height: auto;
-        padding: 10px 0 0;
-      }
-
-      .auth-card {
-        padding: 22px;
-      }
-
-      .g8-nav-actions {
-        gap: 8px;
-      }
-
-      .nav-avatar-btn {
-        width: 40px;
-        height: 40px;
-      }
-    }
-  </style>
 </head>
 <body>
   <div class="page-shell">
 
-    <nav class="g8-nav" role="navigation" aria-label="Main navigation">
-      <a class="g8-brand" href="{{ url_for('home') }}" aria-label="G8BikeShare Home">
+    <nav class="g8-nav">
+      <a class="g8-brand" href="{{ url_for('home') }}">
         <div class="g8-brand-mark">
-          <svg viewBox="0 0 22 22" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <circle cx="5.5" cy="15.5" r="3"/>
-            <circle cx="16.5" cy="15.5" r="3"/>
-            <path d="M5.5 15.5L8.5 8L12 15.5H16.5"/>
-            <path d="M8.5 8H14"/>
-          </svg>
+          <svg viewBox="0 0 22 22" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="15.5" r="3"/><circle cx="16.5" cy="15.5" r="3"/><path d="M5.5 15.5L8.5 8L12 15.5H16.5"/><path d="M8.5 8H14"/></svg>
         </div>
         <div class="g8-brand-text">
           <span class="g8-brand-name"><span class="g8-brand-accent">G8</span>BikeShare</span>
-          <span class="g8-brand-sub">Smart Dublin Bike Companion</span>
         </div>
       </a>
 
-      <nav class="g8-nav-links" aria-label="Page links">
+      <div class="g8-nav-links">
         <a href="{{ url_for('home') }}">Home</a>
-        <a href="{{ url_for('dashboard') }}">Dashboard</a>
+        <a href="{{ url_for('dashboard') }}">Find a Bike</a> 
         <a href="{{ url_for('journey_planner') }}">Journey</a>
         <a href="{{ url_for('weather_page') }}">Weather</a>
         <a href="{{ url_for('about') }}">About</a>
-        <a href="{{ url_for('sign_in') }}" class="active" aria-current="page">Account</a>
-      </nav>
+      </div>
 
-      <div class="g8-nav-actions">
-        <a class="btn" href="{{ url_for('dashboard') }}">Dashboard</a>
+      <div class="g8-nav-actions">        
+        <a href="{{ url_for('sign_in') }}" class="nav-signin-link" id="navSignInLink">Sign In</a>
 
         <div class="nav-avatar-wrap">
-          <button
-            id="navAvatarBtn"
-            class="nav-avatar-btn"
-            type="button"
-            aria-label="User menu"
-            aria-expanded="false"
-          >
-            <span class="nav-avatar-icon" id="navAvatarFallback">
-              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M20 21a8 8 0 0 0-16 0"></path>
-                <circle cx="12" cy="8" r="4"></circle>
-              </svg>
+          <button class="nav-avatar-btn" id="navAvatarBtn">
+            <span class="nav-avatar-icon">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21a8 8 0 0 0-16 0"></path><circle cx="12" cy="8" r="4"></circle></svg>
             </span>
           </button>
-
-          <div id="navAvatarMenu" class="nav-avatar-menu" aria-hidden="true">
+          
+          <div class="nav-avatar-menu" id="navAvatarMenu">
             <div class="nav-avatar-user">
               <strong id="navAvatarUsername">Guest</strong>
               <span id="navAvatarSubtext">Not signed in</span>
             </div>
-            <a class="nav-avatar-link" href="{{ url_for('sign_in') }}" id="navAccountLink">Account</a>
-            <button class="nav-avatar-action hidden" id="navLogoutBtn" type="button">Log out</button>
+            <a href="{{ url_for('home') }}" class="nav-avatar-link">Back to Home</a>
+            <button class="nav-avatar-action hidden" id="navLogoutBtn">Log Out</button>
           </div>
         </div>
       </div>
@@ -328,7 +63,6 @@
           <div class="form-group">
             <label class="form-label" for="usernameInput">Username</label>
             <input id="usernameInput" class="form-input" name="username" type="text" placeholder="e.g. hardy" required />
-            <div class="form-hint">Uses username rather than email to match the backend API.</div>
           </div>
 
           <div class="form-group">
@@ -364,18 +98,9 @@
     const confirmPasswordInput = document.getElementById("confirmPasswordInput");
     const messageBox = document.getElementById("messageBox");
 
-    const navAvatarBtn = document.getElementById("navAvatarBtn");
-    const navAvatarMenu = document.getElementById("navAvatarMenu");
-    const navAvatarUsername = document.getElementById("navAvatarUsername");
-    const navAvatarSubtext = document.getElementById("navAvatarSubtext");
-    const navLogoutBtn = document.getElementById("navLogoutBtn");
-
-    document.addEventListener("DOMContentLoaded", async () => {
+    document.addEventListener("DOMContentLoaded", () => {
       setupModeSwitch();
       setupFormSubmit();
-      setupAvatarMenu();
-      setupLogout();
-      await refreshSession();
     });
 
     function setupModeSwitch() {
@@ -386,7 +111,6 @@
     function setMode(mode) {
       currentMode = mode;
       clearMessage();
-
       if (mode === "login") {
         modeLoginBtn.classList.add("active");
         modeRegisterBtn.classList.remove("active");
@@ -414,11 +138,6 @@
         const password = passwordInput.value;
         const confirmPassword = confirmPasswordInput.value;
 
-        if (!username || !password) {
-          showMessage("Please enter both username and password.", "error");
-          return;
-        }
-
         if (currentMode === "register") {
           if (password.length < 6) {
             showMessage("Password must be at least 6 characters.", "error");
@@ -434,7 +153,7 @@
 
         try {
           submitBtn.disabled = true;
-          submitBtn.textContent = currentMode === "login" ? "Signing in..." : "Creating account...";
+          submitBtn.textContent = "Processing...";
 
           const response = await fetch(endpoint, {
             method: "POST",
@@ -449,17 +168,12 @@
             return;
           }
 
-          showMessage(result.message || "Success.", "success");
-          authForm.reset();
-
-          if (currentMode === "register") {
-            confirmPasswordGroup.classList.remove("hidden");
-          }
-
-          await refreshSession();
+          showMessage(result.message || "Success! Redirecting...", "success");
+          
+          // 登入成功後，重新導向到 Find a Bike (Dashboard)
           setTimeout(() => {
             window.location.href = "/dashboard";
-          }, 900);
+          }, 800);
 
         } catch {
           showMessage("Request failed. Please try again.", "error");
@@ -468,84 +182,6 @@
           submitBtn.textContent = currentMode === "login" ? "Sign in" : "Create account";
         }
       });
-    }
-
-    function setupAvatarMenu() {
-      navAvatarBtn.addEventListener("click", (event) => {
-        event.stopPropagation();
-        const isOpen = navAvatarMenu.classList.toggle("open");
-        navAvatarBtn.setAttribute("aria-expanded", isOpen ? "true" : "false");
-        navAvatarMenu.setAttribute("aria-hidden", isOpen ? "false" : "true");
-      });
-
-      document.addEventListener("click", (event) => {
-        if (!navAvatarMenu.contains(event.target) && !navAvatarBtn.contains(event.target)) {
-          navAvatarMenu.classList.remove("open");
-          navAvatarBtn.setAttribute("aria-expanded", "false");
-          navAvatarMenu.setAttribute("aria-hidden", "true");
-        }
-      });
-    }
-
-    function setupLogout() {
-      navLogoutBtn.addEventListener("click", async () => {
-        clearMessage();
-
-        try {
-          const response = await fetch("/api/auth/logout", { method: "POST" });
-          const result = await response.json();
-
-          if (!result.ok) {
-            showMessage(result.error || "Logout failed.", "error");
-            return;
-          }
-
-          showMessage("Logged out successfully.", "success");
-          await refreshSession();
-          setMode("login");
-        } catch {
-          showMessage("Logout request failed.", "error");
-        }
-      });
-    }
-
-    async function refreshSession() {
-      try {
-        const response = await fetch("/api/auth/me");
-        const result = await response.json();
-
-        if (result.authenticated && result.user) {
-          navAvatarUsername.textContent = result.user.username || "User";
-          navAvatarSubtext.textContent = "Signed in";
-          navLogoutBtn.classList.remove("hidden");
-          renderAvatar(result.user.avatar_url || null);
-        } else {
-          navAvatarUsername.textContent = "Guest";
-          navAvatarSubtext.textContent = "Not signed in";
-          navLogoutBtn.classList.add("hidden");
-          renderAvatar(null);
-        }
-      } catch {
-        navAvatarUsername.textContent = "Guest";
-        navAvatarSubtext.textContent = "Session unavailable";
-        navLogoutBtn.classList.add("hidden");
-        renderAvatar(null);
-      }
-    }
-
-    function renderAvatar(avatarUrl) {
-      if (avatarUrl && String(avatarUrl).trim()) {
-        navAvatarBtn.innerHTML = `<img src="${escapeHtml(avatarUrl)}" alt="User avatar" />`;
-      } else {
-        navAvatarBtn.innerHTML = `
-          <span class="nav-avatar-icon" id="navAvatarFallback">
-            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M20 21a8 8 0 0 0-16 0"></path>
-              <circle cx="12" cy="8" r="4"></circle>
-            </svg>
-          </span>
-        `;
-      }
     }
 
     function showMessage(message, type) {
@@ -557,15 +193,8 @@
       messageBox.textContent = "";
       messageBox.className = "message-box";
     }
-
-    function escapeHtml(value) {
-      return String(value)
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
-    }
   </script>
+
+  <script src="{{ url_for('static', filename='main.js') }}"></script>
 </body>
 </html>

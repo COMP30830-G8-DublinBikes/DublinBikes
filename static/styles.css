@@ -924,3 +924,443 @@ img, svg { display: block; max-width: 100%; }
   .weather-strip { flex-direction: column; align-items: flex-start; }
   .cta-banner { padding: 24px; }
 }
+
+
+
+/* ============================================================
+   SHARED COMPONENTS: Navigation Actions & Avatar
+   (這部分所有網頁都會共用)
+   ============================================================ */
+.g8-nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+}
+
+.nav-avatar-wrap {
+  position: relative;
+}
+
+.nav-avatar-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: #d1d5db;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  overflow: hidden;
+  transition: 0.15s ease;
+  box-shadow: var(--shadow-sm);
+  padding: 0;
+}
+
+.nav-avatar-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.nav-avatar-btn img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.nav-avatar-icon {
+  width: 22px;
+  height: 22px;
+  color: #6b7280;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-avatar-menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  min-width: 190px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-lg);
+  padding: 10px;
+  display: none; /* 由 JS 切換 .open 類名 */
+  z-index: 50;
+}
+
+.nav-avatar-menu.open {
+  display: block;
+}
+
+.nav-avatar-user {
+  padding: 8px 10px 10px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 8px;
+}
+
+.nav-avatar-user strong {
+  display: block;
+  font-size: 14px;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+
+.nav-avatar-user span {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.nav-avatar-link,
+.nav-avatar-action {
+  width: 100%;
+  display: block;
+  text-align: left;
+  background: transparent;
+  border: none;
+  border-radius: var(--r-md);
+  padding: 10px 12px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.nav-avatar-link:hover,
+.nav-avatar-action:hover {
+  background: var(--bg);
+}
+
+/* ============================================================
+   PAGE-SPECIFIC: Auth (Sign In / Register)
+   ============================================================ */
+.auth-layout {
+  min-height: calc(100vh - 180px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 0 10px;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 560px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-2xl);
+  padding: 28px;
+  box-shadow: var(--shadow-lg);
+}
+
+.auth-switch {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: 6px;
+  margin-bottom: 22px;
+}
+
+.auth-switch button {
+  border: none;
+  background: transparent;
+  border-radius: var(--r-md);
+  padding: 10px 16px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  color: var(--muted);
+  transition: 0.15s;
+}
+
+.auth-switch button.active {
+  background: linear-gradient(135deg, var(--brand-mid), var(--brand));
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(37,99,235,0.20);
+}
+
+.auth-card h2 {
+  margin: 0 0 6px;
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -0.02em;
+}
+
+.auth-card .subtext {
+  margin: 0 0 22px;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.primary-submit {
+  width: 100%;
+  border: none;
+  border-radius: var(--r-lg);
+  padding: 13px 18px;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.15s;
+  background: linear-gradient(135deg, var(--brand-mid), var(--brand));
+  color: #fff;
+  box-shadow: var(--shadow-brand);
+  margin-top: 8px;
+}
+
+.primary-submit:hover {
+  transform: translateY(-1px);
+}
+
+.primary-submit:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.message-box {
+  display: none;
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: var(--r-lg);
+  font-size: 14px;
+  line-height: 1.6;
+  border: 1px solid transparent;
+}
+
+.message-box.success {
+  display: block;
+  background: var(--green-pale);
+  color: #166534;
+  border-color: var(--green-border);
+}
+
+.message-box.error {
+  display: block;
+  background: var(--red-pale);
+  color: #991b1b;
+  border-color: var(--red-border);
+}
+
+.hidden {
+  display: none;
+}
+
+/* RWD for Auth & Avatar */
+@media (max-width: 720px) {
+  .auth-layout {
+    min-height: auto;
+    padding: 10px 0 0;
+  }
+
+  .auth-card {
+    padding: 22px;
+  }
+
+  .g8-nav-actions {
+    gap: 8px;
+  }
+
+  .nav-avatar-btn {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+
+/* 導覽列 Sign In 連結樣式 */
+.nav-signin-link {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--brand);
+  text-decoration: none;
+  padding: 8px 12px;
+  border-radius: var(--r-md);
+  transition: 0.2s;
+}
+
+.nav-signin-link:hover {
+  background: var(--brand-pale);
+}
+
+/* 當登入後，隱藏 Sign In 連結 */
+.nav-signin-link.hidden {
+  display: none;
+}
+
+
+/* ── 側邊欄容器與卡片基礎 ── */
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sidebar-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-xl);
+  padding: 20px;
+  box-shadow: var(--shadow-md);
+}
+
+.sidebar-card-title {
+  margin: 0 0 14px;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+
+/* ── 站點詳細資訊元件 ── */
+.station-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: var(--r-pill);
+  font-size: 12px;
+  font-weight: 700;
+  background: var(--brand-pale);
+  color: var(--brand);
+  margin-bottom: 12px;
+}
+
+.station-meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 12px 0;
+}
+
+.metric-box {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: 12px;
+  text-align: center;
+}
+
+.metric-box .label {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.metric-box .value {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.station-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+/* ── 圖表工具列 ── */
+.chart-toolbar {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.btn-toggle {
+  padding: 6px 12px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line);
+  background: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.btn-toggle.active {
+  background: var(--brand);
+  color: #fff;
+  border-color: var(--brand);
+}
+
+.chart-wrap {
+  height: 200px;
+  width: 100%;
+}
+
+/* ── AI 聊天機器人 UI ── */
+.ai-chat-messages {
+  height: 200px;
+  overflow-y: auto;
+  border-radius: var(--r-lg);
+  border: 1px solid var(--line);
+  background: var(--bg);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.ai-message {
+  max-width: 85%;
+  padding: 8px 12px;
+  border-radius: 12px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.ai-message-bot {
+  align-self: flex-start;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-bottom-left-radius: 2px;
+}
+
+.ai-message-user {
+  align-self: flex-end;
+  background: var(--brand);
+  color: #fff;
+  border-bottom-right-radius: 2px;
+}
+
+.ai-chat-form {
+  display: flex;
+  gap: 8px;
+}
+
+.ai-chat-input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1.5px solid var(--line);
+  border-radius: var(--r-lg);
+  font-size: 13px;
+  outline: none;
+}
+
+.ai-send-btn {
+  background: var(--brand);
+  color: #fff;
+  border: none;
+  padding: 0 16px;
+  border-radius: var(--r-lg);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* ── 輔助文字 ── */
+.text-muted { color: var(--muted); }
+.text-sm { font-size: 13px; }
