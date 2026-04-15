@@ -7,56 +7,75 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    body {
-      background: var(--bg);
-    }
-    
+    /* Weather 頁面專屬排版優化 */
+    body { background: var(--bg); }
+    .page-shell { max-width: var(--max-w); margin: 0 auto; padding: var(--page-py); }
+
     .error-box {
       display: none;
-      background: var(--amber-pale);
+      background: #fffbeb;
       border: 1px solid #fcd34d;
       color: #92400e;
       border-radius: var(--r-lg);
       padding: 14px 18px;
       margin-bottom: 20px;
       font-size: 14px;
-      line-height: 1.6;
     }
+
+    /* 頂部數據列 */
     .summary-row {
       display: grid;
       grid-template-columns: repeat(5, minmax(0, 1fr));
       gap: 14px;
       margin-bottom: 20px;
     }
+
     .summary-card {
       background: var(--surface);
       border: 1px solid var(--line);
       border-radius: var(--r-xl);
       padding: 18px;
       box-shadow: var(--shadow-md);
+      transition: transform 0.18s ease, border-color 0.18s ease;
+      min-height: 132px;
     }
+
+    .summary-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--brand-border);
+    }
+
+    .summary-card-emphasis {
+      background: linear-gradient(180deg, var(--surface) 0%, var(--brand-pale) 100%);
+    }
+
     .summary-card-label {
       font-size: 11px;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.04em;
       color: var(--muted);
+      margin-bottom: 6px;
     }
+
     .summary-card-value {
       font-size: 28px;
       font-weight: 800;
-      letter-spacing: -0.03em;
+      letter-spacing: -0.02em;
       color: var(--text);
       line-height: 1.1;
-      margin-top: 4px;
     }
+
+    .summary-card-value--compact { font-size: 20px; }
+
     .summary-card-sub {
       font-size: 12px;
       color: var(--muted);
-      margin-top: 4px;
+      margin-top: 8px;
       line-height: 1.5;
     }
-    /* Ride suitability card */
+
+    /* 騎行建議區域 */
     .ride-suitability {
       background: var(--surface);
       border: 1px solid var(--line);
@@ -70,68 +89,31 @@
       gap: 20px;
       flex-wrap: wrap;
     }
-    .ride-verdict {
-      display: flex;
-      align-items: center;
-      gap: 16px;
+
+    .ride-verdict { flex: 1; min-width: 320px; }
+    .verdict-label { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+    .verdict-title { font-size: 24px; font-weight: 800; color: var(--text); letter-spacing: -0.02em; }
+    .verdict-sub { margin-top: 6px; font-size: 14px; color: var(--muted); line-height: 1.6; }
+
+    /* 按鈕樣式同步 */
+    .ride-cta { display: flex; gap: 10px; }
+    .btn-ride-primary, .btn-ride-secondary {
+      display: inline-flex; align-items: center; padding: 10px 20px;
+      border-radius: var(--r-pill); font-size: 14px; font-weight: 700;
+      text-decoration: none; transition: 0.15s;
     }
-    .verdict-icon {
-      width: 52px;
-      height: 52px;
-      border-radius: var(--r-lg);
-      display: grid;
-      place-items: center;
-      font-size: 26px;
-      flex-shrink: 0;
-    }
-    .verdict-icon.good { background: var(--green-pale); }
-    .verdict-icon.ok { background: var(--amber-pale); }
-    .verdict-icon.bad { background: var(--red-pale); }
-    .verdict-label {
-      font-size: 11px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--muted);
-      margin-bottom: 4px;
-    }
-    .verdict-title {
-      font-size: 20px;
-      font-weight: 800;
-      letter-spacing: -0.02em;
-      color: var(--text);
-    }
-    .verdict-title.good { color: var(--green); }
-    .verdict-title.ok { color: var(--amber); }
-    .verdict-title.bad { color: var(--red); }
-    .verdict-tips {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-    .verdict-tip {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      padding: 6px 12px;
-      border-radius: var(--r-pill);
-      font-size: 12px;
-      font-weight: 600;
-      background: var(--bg);
-      border: 1px solid var(--line);
-      color: var(--text-2);
-    }
-    .ride-cta {
-      display: flex;
-      gap: 10px;
-      flex-shrink: 0;
-    }
+    .btn-ride-primary { background: var(--brand); color: #fff; box-shadow: var(--shadow-brand); }
+    .btn-ride-secondary { background: var(--bg); color: var(--text); border: 1px solid var(--line); }
+    .btn-ride-secondary:hover { background: var(--line-light); }
+
+    /* 圖表佈局 */
     .charts-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 18px;
       margin-bottom: 18px;
     }
+
     .chart-card {
       background: var(--surface);
       border: 1px solid var(--line);
@@ -139,192 +121,159 @@
       padding: 22px;
       box-shadow: var(--shadow-md);
     }
-    .chart-card-head { margin-bottom: 14px; }
-    .chart-card-head h2 { margin: 0 0 4px; font-size: 17px; font-weight: 800; letter-spacing: -0.02em; color: var(--text); }
-    .chart-card-head p { margin: 0; font-size: 13px; color: var(--muted); }
-    .chart-canvas-wrap { position: relative; height: 280px; }
+
+    .chart-card-head h2 { margin: 0 0 4px; font-size: 17px; font-weight: 800; color: var(--text); }
+    .chart-card-head p { margin: 0 0 14px; font-size: 13px; color: var(--muted); }
+    .chart-canvas-wrap { position: relative; height: 260px; }
+
+    /* AI 備註卡片 */
     .ride-note-card {
       background: var(--brand-pale);
       border: 1px solid var(--brand-border);
       border-radius: var(--r-xl);
       padding: 20px 24px;
+      box-shadow: var(--shadow-md);
     }
-    .ride-note-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
-    .ride-note-icon { width: 32px; height: 32px; border-radius: var(--r-md); background: var(--brand-mid); display: grid; place-items: center; font-size: 16px; }
-    .ride-note-card h3 { margin: 0; font-size: 15px; font-weight: 800; color: var(--brand); }
-    .ride-note-card p { margin: 0; color: var(--text-2); font-size: 14px; line-height: 1.75; }
+
+    .ride-note-card h3 { margin: 0 0 8px; font-size: 15px; font-weight: 800; color: var(--brand); }
+    .ride-note-card p { margin: 0; color: var(--text-2); font-size: 14px; line-height: 1.7; }
+
     @media (max-width: 1040px) {
-      .summary-row { grid-template-columns: repeat(3, minmax(0,1fr)); }
+      .summary-row { grid-template-columns: repeat(3, 1fr); }
       .charts-grid { grid-template-columns: 1fr; }
     }
+
     @media (max-width: 640px) {
       .summary-row { grid-template-columns: 1fr 1fr; }
-      .chart-canvas-wrap { height: 220px; }
       .ride-suitability { flex-direction: column; align-items: flex-start; }
-      .ride-cta { width: 100%; }
     }
   </style>
 </head>
 <body>
   <div class="page-shell">
 
-    <nav class="g8-nav" role="navigation" aria-label="Main navigation">
-      <a class="g8-brand" href="{{ url_for('home') }}" aria-label="G8BikeShare Home">
+    <nav class="g8-nav">
+      <a class="g8-brand" href="{{ url_for('home') }}">
         <div class="g8-brand-mark">
-          <svg viewBox="0 0 22 22" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <circle cx="5.5" cy="15.5" r="3"/>
-            <circle cx="16.5" cy="15.5" r="3"/>
-            <path d="M5.5 15.5L8.5 8L12 15.5H16.5"/>
-            <path d="M8.5 8H14"/>
-          </svg>
+          <svg viewBox="0 0 22 22" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="15.5" r="3"/><circle cx="16.5" cy="15.5" r="3"/><path d="M5.5 15.5L8.5 8L12 15.5H16.5"/><path d="M8.5 8H14"/></svg>
         </div>
         <div class="g8-brand-text">
           <span class="g8-brand-name"><span class="g8-brand-accent">G8</span>BikeShare</span>
-          <span class="g8-brand-sub">Smart Dublin Bike Companion</span>
         </div>
       </a>
-      <nav class="g8-nav-links" aria-label="Page links">
+
+      <div class="g8-nav-links">
         <a href="{{ url_for('home') }}">Home</a>
-        <a href="{{ url_for('dashboard') }}">Dashboard</a>
+        <a href="{{ url_for('dashboard') }}">Find a Bike</a> 
         <a href="{{ url_for('journey_planner') }}">Journey</a>
-        <a href="{{ url_for('weather_page') }}" class="active" aria-current="page">Weather</a>
+        <a href="{{ url_for('weather_page') }}" class="active">Weather</a>
         <a href="{{ url_for('about') }}">About</a>
-        <a href="{{ url_for('sign_in') }}">Account</a>
-      </nav>
+      </div>
+
       <div class="g8-nav-actions">
-        <a class="btn" href="{{ url_for('dashboard') }}">Dashboard</a>
+        <a href="{{ url_for('sign_in') }}" class="nav-signin-link" id="navSignInLink">Sign In</a>
+
+        <div class="nav-avatar-wrap">
+          <button class="nav-avatar-btn" id="navAvatarBtn">
+            <span class="nav-avatar-icon">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21a8 8 0 0 0-16 0"></path><circle cx="12" cy="8" r="4"></circle></svg>
+            </span>
+          </button>
+          
+          <div class="nav-avatar-menu" id="navAvatarMenu">
+            <div class="nav-avatar-user">
+              <strong id="navAvatarUsername">Guest</strong>
+              <span id="navAvatarSubtext">Not signed in</span>
+            </div>
+            <a href="{{ url_for('sign_in') }}" class="nav-avatar-link">Account Settings</a>
+            <button class="nav-avatar-action hidden" id="navLogoutBtn">Log Out</button>
+          </div>
+        </div>
       </div>
     </nav>
 
     <header style="margin-bottom:24px;">
-      <div class="pill pill-blue" style="margin-bottom:12px;">🌤️ Dublin, Ireland</div>
-      <h1 class="page-title">Weather Dashboard</h1>
-      <p style="color:var(--muted);font-size:16px;line-height:1.7;max-width:640px;margin:0;">
-        Live conditions and forecast to help you decide when to ride and what to bring.
-      </p>
+      <div style="display:inline-block; background:var(--brand-pale); color:var(--brand); padding:4px 12px; border-radius:20px; font-size:12px; font-weight:700; margin-bottom:12px;">Dublin, Ireland</div>
+      <h1 style="font-size:32px; font-weight:800; letter-spacing:-0.03em; margin:0 0 8px;">Weather Dashboard</h1>
+      <p style="color:var(--muted); font-size:16px; margin:0;">Live conditions and forecast to help you decide when to ride.</p>
     </header>
 
-    <div class="error-box" id="weatherError" role="alert"></div>
+    <div class="error-box" id="weatherError"></div>
 
-    <!-- Ride suitability -->
-    <div class="ride-suitability" id="rideSuitability" aria-label="Riding recommendation">
+    <div class="ride-suitability">
       <div class="ride-verdict">
-        <div class="verdict-icon good" id="verdictIcon">🚲</div>
-        <div>
-          <div class="verdict-label">Today's verdict</div>
-          <div class="verdict-title good" id="verdictTitle">Loading...</div>
-        </div>
+        <div class="verdict-label">Today's verdict</div>
+        <div class="verdict-title" id="verdictTitle">Loading...</div>
+        <div class="verdict-sub" id="verdictSub">Checking current conditions...</div>
       </div>
-      <div class="verdict-tips" id="verdictTips"></div>
       <div class="ride-cta">
-        <a class="btn-outline" href="{{ url_for('dashboard') }}">Find a station</a>
-        <a class="btn" href="{{ url_for('journey_planner') }}">Plan a journey</a>
+        <a class="btn-ride-secondary" href="{{ url_for('dashboard') }}">Find a station</a>
+        <a class="btn-ride-primary" href="{{ url_for('journey_planner') }}">Plan a journey</a>
       </div>
     </div>
 
-    <!-- Summary cards -->
-    <section class="summary-row" aria-label="Current weather summary">
-      <div class="summary-card">
+    <div class="summary-row">
+      <div class="summary-card summary-card-emphasis">
         <div class="summary-card-label">Temperature</div>
         <div class="summary-card-value" id="summaryTemp">--°C</div>
         <div class="summary-card-sub" id="summaryDesc">Loading...</div>
       </div>
-      <div class="summary-card">
+
+      <div class="summary-card summary-card-emphasis">
         <div class="summary-card-label">Feels like</div>
         <div class="summary-card-value" id="summaryFeels">--°C</div>
-        <div class="summary-card-sub">Perceived temperature</div>
+        <div class="summary-card-sub">Perceived temp</div>
       </div>
+
       <div class="summary-card">
         <div class="summary-card-label">Humidity</div>
         <div class="summary-card-value" id="summaryHumidity">--%</div>
-        <div class="summary-card-sub">Current air moisture</div>
+        <div class="summary-card-sub">Air moisture</div>
       </div>
+
       <div class="summary-card">
         <div class="summary-card-label">Wind speed</div>
         <div class="summary-card-value" id="summaryWind">--</div>
         <div class="summary-card-sub">Measured in m/s</div>
       </div>
+
       <div class="summary-card">
         <div class="summary-card-label">Condition</div>
-        <div class="summary-card-value" id="summaryMain" style="font-size:20px;">--</div>
-        <div class="summary-card-sub">Useful for ride planning</div>
+        <div class="summary-card-value summary-card-value--compact" id="summaryMain">--</div>
+        <div class="summary-card-sub" id="summaryMainSub">Sky status</div>
       </div>
-    </section>
+    </div>
 
-    <!-- Charts -->
-    <section class="charts-grid">
+    <div class="charts-grid">
       <article class="chart-card">
         <div class="chart-card-head">
           <h2>Forecast temperature</h2>
-          <p>Min and max temperatures by forecast day.</p>
+          <p>Next few days min/max trends.</p>
         </div>
-        <div class="chart-canvas-wrap"><canvas id="tempChart"></canvas></div>
+        <div class="chart-canvas-wrap">
+          <canvas id="tempChart"></canvas>
+        </div>
       </article>
+
       <article class="chart-card">
         <div class="chart-card-head">
           <h2>Precipitation probability</h2>
-          <p>Max chance of rain for each forecast day.</p>
+          <p>Chance of rain for forecast period.</p>
         </div>
-        <div class="chart-canvas-wrap"><canvas id="popChart"></canvas></div>
+        <div class="chart-canvas-wrap">
+          <canvas id="popChart"></canvas>
+        </div>
       </article>
-    </section>
+    </div>
 
-    <!-- Ride note -->
     <section class="ride-note-card">
-      <div class="ride-note-head">
-        <div class="ride-note-icon">📋</div>
-        <h3>Ride planning note</h3>
-      </div>
+      <h3>Ride planning note</h3>
       <p id="rideNote">Loading weather interpretation...</p>
     </section>
 
   </div>
+
   <script src="{{ url_for('static', filename='weather.js') }}"></script>
-  <script>
-    function renderRideSuitability(weather) {
-      const main = (weather.weather_main || "").toLowerCase();
-      const desc = (weather.weather_description || "").toLowerCase();
-      const temp = Number(weather.temp);
-      const wind = Number(weather.wind_speed);
-      const rain = Number(weather.rain_1h || 0);
-
-      const icon = document.getElementById("verdictIcon");
-      const title = document.getElementById("verdictTitle");
-      const tips = document.getElementById("verdictTips");
-
-      let verdict, cls, emoji, tipList = [];
-
-      if (main.includes("thunder") || rain > 5 || wind > 12) {
-        verdict = "Not recommended today"; cls = "bad"; emoji = "⛈️";
-        if (main.includes("thunder")) tipList.push("⚡ Thunderstorm risk");
-        if (rain > 5) tipList.push("🌧️ Heavy rain");
-        if (wind > 12) tipList.push("💨 Strong winds");
-      } else if (main.includes("rain") || main.includes("drizzle") || temp < 5 || wind > 8) {
-        verdict = "Possible with precautions"; cls = "ok"; emoji = "🌦️";
-        if (main.includes("rain") || main.includes("drizzle")) tipList.push("🧥 Bring waterproofs");
-        if (temp < 5) tipList.push("🧤 Dress warmly");
-        if (wind > 8) tipList.push("💨 Moderate wind");
-      } else {
-        verdict = "Good conditions for cycling"; cls = "good"; emoji = "☀️";
-        if (temp >= 15) tipList.push("👕 Light clothing");
-        if (rain === 0) tipList.push("☂️ No rain expected");
-        tipList.push("🚲 Enjoy your ride");
-      }
-
-      icon.textContent = emoji;
-      icon.className = `verdict-icon ${cls}`;
-      title.textContent = verdict;
-      title.className = `verdict-title ${cls}`;
-      tips.innerHTML = tipList.map(t => `<span class="verdict-tip">${t}</span>`).join("");
-    }
-
-    document.addEventListener("DOMContentLoaded", async () => {
-      try {
-        const res = await fetch("/api/weather/current");
-        const result = await res.json();
-        if (result.ok && result.data) renderRideSuitability(result.data);
-      } catch {}
-    });
-  </script>
+  <script src="{{ url_for('static', filename='main.js') }}"></script>
 </body>
 </html>

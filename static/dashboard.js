@@ -648,7 +648,7 @@ function renderMarkers(rows, options = {}) {
       gmpClickable: true
     });
 
-    marker.addListener("click", async () => {
+    marker.addListener("gmp-click", async () => {
       await selectStation(row.station_id, true);
     });
 
@@ -848,10 +848,18 @@ async function loadHistory(stationId) {
 
 async function loadPredictions(stationId, hours = 24) {
   try {
-    const response = await fetch(`/api/predict/station/${stationId}?hours=${hours}`);
+    // 將網址改為後端存在的路徑
+    const url = `/api/db/bikes/hourly_avg/${stationId}?hours=${hours}`;
+    const response = await fetch(url);
+    
+    // 檢查回傳是否成功
+    if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
     const result = await response.json();
 
-    if (!response.ok || !result.ok) {
+    if (!result.ok) {
       renderPredictionEmpty(result.error || "Prediction data unavailable.");
       return;
     }

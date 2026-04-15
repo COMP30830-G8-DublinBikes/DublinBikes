@@ -6,7 +6,11 @@ const summaryFeels = document.getElementById("summaryFeels");
 const summaryHumidity = document.getElementById("summaryHumidity");
 const summaryWind = document.getElementById("summaryWind");
 const summaryMain = document.getElementById("summaryMain");
+const summaryMainSub = document.getElementById("summaryMainSub");
 const rideNote = document.getElementById("rideNote");
+
+const verdictTitle = document.getElementById("verdictTitle");
+const verdictSub = document.getElementById("verdictSub");
 
 let tempChart = null;
 let popChart = null;
@@ -34,6 +38,7 @@ async function loadWeatherDashboard() {
     const days = forecastResult.data.days || [];
 
     renderSummary(current);
+    renderRideSuitability(current);
     renderTempChart(days);
     renderPopChart(days);
     renderRideNote(current, days);
@@ -46,13 +51,66 @@ async function loadWeatherDashboard() {
 }
 
 function renderSummary(weather) {
-  summaryTemp.textContent = formatTemp(weather.temp);
-  summaryDesc.textContent = weather.weather_description || weather.weather_main || "No description";
+  const conditionText = formatConditionText(weather.weather_main, weather.weather_description);
+  const conditionLabel = formatConditionLabel(weather.weather_main, weather.weather_description);
 
-  summaryFeels.textContent = formatTemp(weather.feels_like);
-  summaryHumidity.textContent = `${safeNumber(weather.humidity, "--")}%`;
-  summaryWind.textContent = `${safeNumber(weather.wind_speed, "--")} m/s`;
-  summaryMain.textContent = weather.weather_main || "N/A";
+  summaryTemp.textContent = formatRoundedTemp(weather.temp);
+  summaryDesc.textContent = conditionText || "Current weather conditions";
+
+  summaryFeels.textContent = formatRoundedTemp(weather.feels_like);
+  summaryHumidity.textContent = formatPercent(weather.humidity);
+  summaryWind.textContent = formatWind(weather.wind_speed);
+
+  summaryMain.textContent = conditionLabel;
+  if (summaryMainSub) {
+    summaryMainSub.textContent = conditionText || "Current sky conditions";
+  }
+}
+
+function renderRideSuitability(weather) {
+  const main = String(weather.weather_main || "").toLowerCase();
+  const temp = toNumberOrNull(weather.temp);
+  const wind = toNumberOrNull(weather.wind_speed);
+  const rain = toNumberOrNull(weather.rain_1h) ?? 0;
+
+  let verdict = "Conditions updating";
+  let cls = "good";
+  let detail = "Live weather is being checked for your journey.";
+
+  if (main.includes("thunder") || rain > 5 || (wind !== null && wind > 12)) {
+    verdict = "Not recommended today";
+    cls = "bad";
+    detail = "Strong wind or heavy rain is expected, so postponing your ride would be safer.";
+  } else if (main.includes("rain") || main.includes("drizzle") || (temp !== null && temp < 5) || (wind !== null && wind > 8)) {
+    verdict = "Possible with precautions";
+    cls = "ok";
+
+    if (main.includes("rain") || main.includes("drizzle")) {
+      detail = "Bring waterproofs and allow extra time for a wetter ride.";
+    } else if (temp !== null && temp < 5) {
+      detail = "Dress warmly and consider gloves before setting off.";
+    } else {
+      detail = "Conditions are manageable, but wind may make the ride feel less comfortable.";
+    }
+  } else {
+    verdict = "Good conditions for cycling";
+    cls = "good";
+
+    if (temp !== null && temp >= 15) {
+      detail = "Mild conditions should make for a comfortable city ride.";
+    } else {
+      detail = "Conditions look stable for riding across the city.";
+    }
+  }
+
+  if (verdictTitle) {
+    verdictTitle.textContent = verdict;
+    verdictTitle.className = `verdict-title ${cls}`;
+  }
+
+  if (verdictSub) {
+    verdictSub.textContent = detail;
+  }
 }
 
 function renderTempChart(days) {
@@ -76,15 +134,17 @@ function renderTempChart(days) {
           label: "Min temperature (°C)",
           data: minTemps,
           borderWidth: 2,
-          tension: 0.3,
-          fill: false
+          tension: 0.35,
+          fill: false,
+          spanGaps: true
         },
         {
           label: "Max temperature (°C)",
           data: maxTemps,
           borderWidth: 2,
-          tension: 0.3,
-          fill: false
+          tension: 0.35,
+          fill: false,
+          spanGaps: true
         }
       ]
     },
@@ -101,7 +161,11 @@ function renderTempChart(days) {
         },
         tooltip: {
           callbacks: {
-            label: (context) => `${context.dataset.label}: ${context.raw}°C`
+            label: (context) => {
+              const value = toNumberOrNull(context.raw);
+              if (value == null) return `${context.dataset.label}: --`;
+              return `${context.dataset.label}: ${Math.round(value)}°C`;
+            }
           }
         }
       },
@@ -110,6 +174,9 @@ function renderTempChart(days) {
           title: {
             display: true,
             text: "Temperature (°C)"
+          },
+          ticks: {
+            callback: (value) => `${Math.round(value)}°`
           }
         }
       }
@@ -164,6 +231,9 @@ function renderPopChart(days) {
           title: {
             display: true,
             text: "Probability (%)"
+          },
+          ticks: {
+            callback: (value) => `${Math.round(value)}%`
           }
         }
       }
@@ -172,39 +242,38 @@ function renderPopChart(days) {
 }
 
 function renderRideNote(current, days) {
-  const main = (current.weather_main || "").toLowerCase();
-  const desc = current.weather_description || "current conditions";
+  const main = String(current.weather_main || "").toLowerCase();
+  const desc = formatConditionText(current.weather_main, current.weather_description) || "current conditions";
   const temp = toNumberOrNull(current.temp);
 
   let highestPop = 0;
-  let wettestDay = null;
+  let wettestDayLabel = null;
 
   for (const day of days) {
     const popValue = toNumberOrNull(day.pop_max);
     if (popValue != null && popValue > highestPop) {
       highestPop = popValue;
-      wettestDay = day.date;
+      wettestDayLabel = formatDateLabel(day.date);
     }
   }
 
   const popPercent = Math.round(highestPop * 100);
-
-  let message = `Current weather is ${desc}. `;
+  let message = `Current weather is ${desc.toLowerCase()}. `;
 
   if (main.includes("rain") || main.includes("drizzle")) {
     message += "Cycling is still possible, but waterproof clothing is recommended. ";
   } else if (temp != null && temp <= 5) {
-    message += "It is quite cold, so gloves and extra layers would be sensible. ";
+    message += "It is quite cold, so gloves and an extra layer would be sensible. ";
   } else if (temp != null && temp >= 18) {
     message += "Conditions are relatively mild for a city ride. ";
   } else {
     message += "Conditions look generally manageable for cycling. ";
   }
 
-  if (wettestDay) {
-    message += `The highest forecast precipitation probability is ${popPercent}% on ${wettestDay}.`;
+  if (wettestDayLabel && popPercent > 0) {
+    message += `The highest forecast precipitation probability is ${popPercent}% on ${wettestDayLabel}.`;
   } else {
-    message += "No strong precipitation signal appears in the available forecast.";
+    message += "Rain risk remains low across the available forecast.";
   }
 
   rideNote.textContent = message;
@@ -217,6 +286,20 @@ function renderFallbackState() {
   summaryHumidity.textContent = "--%";
   summaryWind.textContent = "-- m/s";
   summaryMain.textContent = "--";
+
+  if (summaryMainSub) {
+    summaryMainSub.textContent = "Current sky conditions unavailable";
+  }
+
+  if (verdictTitle) {
+    verdictTitle.textContent = "Weather data unavailable";
+    verdictTitle.className = "verdict-title";
+  }
+
+  if (verdictSub) {
+    verdictSub.textContent = "The riding recommendation could not be generated because the weather API did not respond.";
+  }
+
   rideNote.textContent = "Weather interpretation is unavailable because the API response could not be loaded.";
 
   if (tempChart) {
@@ -242,26 +325,65 @@ function hideError() {
   errorEl.textContent = "";
 }
 
-function formatTemp(value) {
+function formatRoundedTemp(value) {
   const num = toNumberOrNull(value);
-  return num == null ? "--°C" : `${num}°C`;
+  return num == null ? "--°C" : `${Math.round(num)}°C`;
 }
 
-function safeNumber(value, fallback = "N/A") {
+function formatPercent(value) {
   const num = toNumberOrNull(value);
-  return num == null ? fallback : num;
+  return num == null ? "--%" : `${Math.round(num)}%`;
+}
+
+function formatWind(value) {
+  const num = toNumberOrNull(value);
+  return num == null ? "-- m/s" : `${num.toFixed(1)} m/s`;
+}
+
+function formatConditionLabel(main, desc) {
+  const key = String(main || "").toLowerCase().trim();
+
+  const map = {
+    clear: "Clear",
+    clouds: "Cloudy",
+    rain: "Rainy",
+    drizzle: "Drizzly",
+    thunderstorm: "Stormy",
+    snow: "Snowy",
+    mist: "Misty",
+    haze: "Hazy",
+    fog: "Foggy",
+    smoke: "Smoky"
+  };
+
+  if (map[key]) return map[key];
+
+  const fallback = desc || main;
+  return fallback ? capitalizeWords(String(fallback)) : "N/A";
+}
+
+function formatConditionText(main, desc) {
+  const fallback = String(desc || main || "").replace(/_/g, " ").trim();
+  return fallback ? capitalizeWords(fallback) : "";
+}
+
+function capitalizeWords(text) {
+  return String(text)
+    .toLowerCase()
+    .replace(/\b[a-z]/g, (char) => char.toUpperCase());
 }
 
 function toNumberOrNull(value) {
   if (value == null || value === "") return null;
   const num = Number(value);
-  return Number.isNaN(num) ? null : Number(num.toFixed(2));
+  return Number.isFinite(num) ? num : null;
 }
 
 function formatDateLabel(dateString) {
   if (!dateString) return "N/A";
   const date = new Date(dateString);
   if (Number.isNaN(date.getTime())) return dateString;
+
   return date.toLocaleDateString("en-IE", {
     weekday: "short",
     month: "short",

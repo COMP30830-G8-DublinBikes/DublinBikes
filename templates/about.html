@@ -6,6 +6,7 @@
   <title>About – G8BikeShare</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
   <style>
+    /* About 頁面專屬排版優化 */
     body {
       background: var(--bg);
     }
@@ -16,44 +17,20 @@
       padding: var(--page-py);
     }
 
-    /* ── Page header ── */
-    .page-head {
+    .section-card {
       background: var(--surface);
       border: 1px solid var(--line);
       border-radius: var(--r-2xl);
-      padding: 32px 36px;
-      box-shadow: var(--shadow-md);
-      margin-bottom: 20px;
-    }
-
-    .page-head h1 {
-      margin: 12px 0 12px;
-      font-size: clamp(34px, 5vw, 56px);
-      font-weight: 800;
-      letter-spacing: -0.03em;
-      line-height: 1.05;
-      color: var(--text);
-    }
-
-    .page-head p {
-      margin: 0;
-      color: var(--muted);
-      font-size: 16px;
-      line-height: 1.75;
-      max-width: 760px;
-    }
-
-    /* ── Section cards ── */
-    .content-card {
-      background: var(--surface);
-      border: 1px solid var(--line);
-      border-radius: var(--r-2xl);
-      padding: 28px 32px;
       box-shadow: var(--shadow-md);
       margin-bottom: 18px;
+      overflow: hidden;
     }
 
-    .content-card h2 {
+    .section-inner {
+      padding: 30px 32px;
+    }
+
+    .section-title {
       margin: 0 0 10px;
       font-size: 22px;
       font-weight: 800;
@@ -61,15 +38,205 @@
       color: var(--text);
     }
 
-    .content-card p {
-      margin: 0 0 4px;
+    .section-subtitle {
+      margin: 0;
       color: var(--muted);
       font-size: 15px;
       line-height: 1.75;
+      max-width: 760px;
     }
 
-    /* ── Tech stack chips ── */
-    .stack-chips {
+    /* Hero Section */
+    .about-hero {
+      padding: 38px 40px;
+      display: grid;
+      grid-template-columns: 1.02fr 0.98fr;
+      gap: 28px;
+      align-items: center;
+    }
+
+    .about-hero h1 {
+      margin: 14px 0 14px;
+      font-size: clamp(36px, 5vw, 60px);
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      line-height: 1.02;
+      color: var(--text);
+      max-width: 700px;
+    }
+
+    .about-hero p {
+      margin: 0 0 22px;
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1.8;
+      max-width: 640px;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+
+    .hero-btn-primary,
+    .hero-btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      padding: 0 18px;
+      border-radius: var(--r-pill);
+      font-size: 14px;
+      font-weight: 700;
+      text-decoration: none;
+      transition: 0.15s ease;
+    }
+
+    .hero-btn-primary {
+      background: linear-gradient(135deg, var(--brand-mid), var(--brand));
+      color: #fff;
+      box-shadow: var(--shadow-brand);
+    }
+
+    .hero-btn-primary:hover {
+      transform: translateY(-1px);
+    }
+
+    .hero-btn-secondary {
+      background: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--line);
+    }
+
+    .hero-btn-secondary:hover {
+      background: var(--line-light);
+    }
+
+    .hero-stats {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 18px;
+    }
+
+    .hero-stat {
+      display: inline-flex;
+      align-items: center;
+      padding: 7px 13px;
+      border-radius: var(--r-pill);
+      background: var(--bg);
+      border: 1px solid var(--line);
+      color: var(--text-2);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .hero-media {
+      background: linear-gradient(180deg, #f8fbff 0%, #eef4ff 100%);
+      border: 1px solid var(--line);
+      border-radius: var(--r-2xl);
+      padding: 16px;
+      box-shadow: var(--shadow-md);
+    }
+
+    .hero-shot {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      overflow: hidden;
+      box-shadow: var(--shadow-md);
+    }
+
+    .hero-shot img {
+      display: block;
+      width: 100%;
+      height: auto;
+      object-fit: cover;
+      background: #eef2f7;
+    }
+
+    /* Value Strip */
+    .value-strip {
+      display: grid;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 22px;
+      align-items: center;
+    }
+
+    .value-strip h2 {
+      margin: 0 0 10px;
+      font-size: clamp(28px, 4vw, 42px);
+      font-weight: 800;
+      letter-spacing: -0.035em;
+      line-height: 1.08;
+      color: var(--text);
+    }
+
+    .tag-cloud {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .tag-pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 10px 16px;
+      border-radius: var(--r-pill);
+      background: var(--bg);
+      border: 1px solid var(--line);
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 700;
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* Grid layouts for Help & Team */
+    .use-case-grid,
+    .team-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 18px;
+    }
+
+    .use-case-card,
+    .team-card {
+      background: var(--bg);
+      border: 1px solid var(--line);
+      border-radius: var(--r-xl);
+      padding: 20px;
+    }
+
+    .use-case-step {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 999px;
+      background: var(--brand-pale);
+      color: var(--brand);
+      font-size: 12px;
+      font-weight: 800;
+      margin-bottom: 12px;
+    }
+
+    .team-role {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 12px;
+      border-radius: var(--r-pill);
+      background: var(--brand-pale);
+      color: var(--brand);
+      font-size: 12px;
+      font-weight: 800;
+      margin-bottom: 10px;
+    }
+
+    .stack-wrap {
       display: flex;
       flex-wrap: wrap;
       gap: 8px;
@@ -88,85 +255,7 @@
       font-weight: 600;
     }
 
-    /* ── Team grid ── */
-    .team-grid {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 14px;
-      margin-top: 18px;
-    }
-
-    .team-card {
-      background: var(--bg);
-      border: 1px solid var(--line);
-      border-radius: var(--r-xl);
-      padding: 20px;
-    }
-
-    .team-card-role {
-      display: inline-flex;
-      align-items: center;
-      padding: 4px 12px;
-      border-radius: var(--r-pill);
-      background: var(--brand-pale);
-      color: var(--brand);
-      font-size: 12px;
-      font-weight: 800;
-      border: 1px solid var(--brand-border);
-      margin-bottom: 10px;
-    }
-
-    .team-card h3 {
-      margin: 0 0 8px;
-      font-size: 15px;
-      font-weight: 800;
-      letter-spacing: -0.01em;
-      color: var(--text);
-    }
-
-    .team-card p {
-      margin: 0;
-      font-size: 13.5px;
-      color: var(--muted);
-      line-height: 1.7;
-    }
-
-    /* ── Features grid ── */
-    .features-grid {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 14px;
-      margin-top: 18px;
-    }
-
-    .feature-item {
-      background: var(--bg);
-      border: 1px solid var(--line);
-      border-radius: var(--r-xl);
-      padding: 18px 20px;
-    }
-
-    .feature-icon {
-      font-size: 22px;
-      margin-bottom: 8px;
-      display: block;
-    }
-
-    .feature-item h3 {
-      margin: 0 0 6px;
-      font-size: 15px;
-      font-weight: 800;
-      color: var(--text);
-    }
-
-    .feature-item p {
-      margin: 0;
-      font-size: 13px;
-      color: var(--muted);
-      line-height: 1.65;
-    }
-
-    /* ── CTA footer ── */
+    /* CTA Section */
     .about-cta {
       background: linear-gradient(135deg, var(--brand-mid), var(--brand));
       border-radius: var(--r-2xl);
@@ -190,202 +279,218 @@
     .about-cta p {
       margin: 0;
       font-size: 14px;
-      color: rgba(255,255,255,0.75);
+      color: rgba(255, 255, 255, 0.78);
     }
 
     .about-cta-btns {
       display: flex;
       gap: 10px;
-      flex-wrap: wrap;
-      flex-shrink: 0;
     }
 
-    .btn-white {
-      display: inline-flex;
-      align-items: center;
-      padding: 10px 20px;
-      border-radius: var(--r-pill);
-      background: #fff;
-      color: var(--brand);
-      font-size: 13.5px;
-      font-weight: 700;
-      text-decoration: none;
-      transition: 0.15s;
-    }
-
-    .btn-white:hover { background: var(--brand-pale); transform: translateY(-1px); }
-
+    .btn-white,
     .btn-ghost-white {
       display: inline-flex;
       align-items: center;
       padding: 10px 20px;
       border-radius: var(--r-pill);
-      background: rgba(255,255,255,0.15);
-      color: #fff;
       font-size: 13.5px;
       font-weight: 700;
-      border: 1px solid rgba(255,255,255,0.3);
       text-decoration: none;
       transition: 0.15s;
     }
 
-    .btn-ghost-white:hover { background: rgba(255,255,255,0.25); }
-
-    /* ── Responsive ── */
-    @media (max-width: 900px) {
-      .team-grid,
-      .features-grid { grid-template-columns: 1fr 1fr; }
+    .btn-white {
+      background: #fff;
+      color: var(--brand);
     }
 
-    @media (max-width: 600px) {
-      .team-grid,
-      .features-grid { grid-template-columns: 1fr; }
-      .page-head { padding: 22px; }
-      .content-card { padding: 22px; }
-      .about-cta { flex-direction: column; }
+    .btn-ghost-white {
+      background: rgba(255, 255, 255, 0.15);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    @media (max-width: 980px) {
+      .about-hero, .value-strip { grid-template-columns: 1fr; }
+      .team-grid, .use-case-grid { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (max-width: 640px) {
+      .team-grid, .use-case-grid { grid-template-columns: 1fr; }
+      .about-cta { flex-direction: column; align-items: flex-start; }
     }
   </style>
 </head>
 <body>
   <div class="page-shell">
 
-    <!-- NAV -->
-    <nav class="g8-nav" role="navigation" aria-label="Main navigation">
-      <a class="g8-brand" href="{{ url_for('home') }}" aria-label="G8BikeShare Home">
+    <nav class="g8-nav">
+      <a class="g8-brand" href="{{ url_for('home') }}">
         <div class="g8-brand-mark">
-          <svg viewBox="0 0 22 22" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <circle cx="5.5" cy="15.5" r="3"/>
-            <circle cx="16.5" cy="15.5" r="3"/>
-            <path d="M5.5 15.5L8.5 8L12 15.5H16.5"/>
-            <path d="M8.5 8H14"/>
-          </svg>
+          <svg viewBox="0 0 22 22" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="15.5" r="3"/><circle cx="16.5" cy="15.5" r="3"/><path d="M5.5 15.5L8.5 8L12 15.5H16.5"/><path d="M8.5 8H14"/></svg>
         </div>
         <div class="g8-brand-text">
           <span class="g8-brand-name"><span class="g8-brand-accent">G8</span>BikeShare</span>
-          <span class="g8-brand-sub">Smart Dublin Bike Companion</span>
         </div>
       </a>
 
-      <nav class="g8-nav-links" aria-label="Page links">
+      <div class="g8-nav-links">
         <a href="{{ url_for('home') }}">Home</a>
-        <a href="{{ url_for('dashboard') }}">Dashboard</a>
+        <a href="{{ url_for('dashboard') }}">Find a Bike</a> 
         <a href="{{ url_for('journey_planner') }}">Journey</a>
         <a href="{{ url_for('weather_page') }}">Weather</a>
         <a href="{{ url_for('about') }}" class="active" aria-current="page">About</a>
-        <a href="{{ url_for('sign_in') }}">Account</a>
-      </nav>
+      </div>
 
       <div class="g8-nav-actions">
-        <a class="btn" href="{{ url_for('dashboard') }}">Dashboard</a>
+        <a href="{{ url_for('sign_in') }}" class="nav-signin-link" id="navSignInLink">Sign In</a>
+
+        <div class="nav-avatar-wrap">
+          <button class="nav-avatar-btn" id="navAvatarBtn">
+            <span class="nav-avatar-icon">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21a8 8 0 0 0-16 0"></path><circle cx="12" cy="8" r="4"></circle></svg>
+            </span>
+          </button>
+          
+          <div class="nav-avatar-menu" id="navAvatarMenu">
+            <div class="nav-avatar-user">
+              <strong id="navAvatarUsername">Guest</strong>
+              <span id="navAvatarSubtext">Not signed in</span>
+            </div>
+            <a href="{{ url_for('sign_in') }}" class="nav-avatar-link">Account Settings</a>
+            <button class="nav-avatar-action hidden" id="navLogoutBtn">Log Out</button>
+          </div>
+        </div>
       </div>
     </nav>
 
-    <!-- HERO CARD -->
-    <header class="page-head">
-      <div class="pill pill-blue">UCD Software Engineering · Group 8</div>
-      <h1>About G8BikeShare</h1>
-      <p>
-        G8BikeShare is a Dublin bike-sharing web application designed to make city cycling easier and more informed.
-        It combines live station availability, current weather, forecast trends, journey support, historical bike patterns,
-        and AI-powered riding advice in one interface.
-      </p>
-    </header>
+    <section class="section-card">
+      <div class="about-hero">
+        <div>
+          <div style="display:inline-block; background:var(--brand-pale); color:var(--brand); padding:5px 15px; border-radius:20px; font-size:12px; font-weight:700; margin-bottom:10px;">UCD Software Engineering · Group 8</div>
+          <h1>Built to make Dublin bike trips simpler.</h1>
+          <p>
+            G8BikeShare brings together live station availability, weather context,
+            and journey support in one clear flow, helping users make faster
+            cycling decisions before they set off.
+          </p>
 
-    <!-- PROJECT OVERVIEW -->
-    <section class="content-card">
-      <h2>Project overview</h2>
-      <p>
-        The goal is to improve the Dublin Bikes experience by going beyond raw station data. Rather than only showing
-        how many bikes are available, G8BikeShare helps users understand whether a station is practical right now,
-        whether the weather is suitable for riding, and how to move quickly into route planning.
-      </p>
+          <div class="hero-actions">
+            <a class="hero-btn-primary" href="{{ url_for('dashboard') }}">Find a Bike</a>
+            <a class="hero-btn-secondary" href="{{ url_for('journey_planner') }}">Plan a journey</a>
+          </div>
 
-      <div class="stack-chips" aria-label="Technologies used">
-        <span class="stack-chip">Flask</span>
-        <span class="stack-chip">MySQL</span>
-        <span class="stack-chip">Google Maps API</span>
-        <span class="stack-chip">OpenWeather API</span>
-        <span class="stack-chip">Gemini AI</span>
-        <span class="stack-chip">HTML / CSS / JavaScript</span>
-        <span class="stack-chip">AWS EC2</span>
+          <div class="hero-stats">
+            <span class="hero-stat">Live station checks</span>
+            <span class="hero-stat">Weather-aware decisions</span>
+            <span class="hero-stat">Faster route planning</span>
+          </div>
+        </div>
+
+        <div class="hero-media">
+          <div class="hero-shot">
+            <img src="{{ url_for('static', filename='img/about-dashboard.png') }}" alt="G8BikeShare dashboard screenshot" />
+          </div>
+        </div>
       </div>
     </section>
 
-    <!-- TEAM -->
-    <section class="content-card">
-      <h2>Team members</h2>
-      <p>Three developers from UCD Computer Science Conversion.</p>
-
-      <div class="team-grid">
-        <article class="team-card">
-          <div class="team-card-role">Hardy</div>
-          <h3>Frontend & Product polish</h3>
-          <p>Core page design, homepage structure, dashboard interaction, weather visualisation, journey planner improvements, and overall user-facing polish.</p>
-        </article>
-        <article class="team-card">
-          <div class="team-card-role">Nancy</div>
-          <h3>Frontend-backend integration & AI</h3>
-          <p>Connected dashboard logic with backend routes and extended the project toward AI-powered recommendations and conversational support.</p>
-        </article>
-        <article class="team-card">
-          <div class="team-card-role">Lily</div>
-          <h3>Backend, database & deployment</h3>
-          <p>Backend structure, API and database connections, deployment to AWS EC2, and public access preparation.</p>
-        </article>
+    <section class="section-card">
+      <div class="section-inner">
+        <div class="value-strip">
+          <div>
+            <h2>Everything you need before you start riding.</h2>
+            <p>
+              Instead of switching between separate pages for bikes, weather,
+              and directions, G8BikeShare keeps the key decisions together in
+              one cleaner experience.
+            </p>
+          </div>
+          <div class="tag-cloud">
+            <span class="tag-pill">Live stations</span>
+            <span class="tag-pill">Bike availability</span>
+            <span class="tag-pill">Dock availability</span>
+            <span class="tag-pill">Weather context</span>
+            <span class="tag-pill">Route planning</span>
+            <span class="tag-pill">AI support</span>
+          </div>
+        </div>
       </div>
     </section>
 
-    <!-- FEATURES -->
-    <section class="content-card">
-      <h2>Key features</h2>
-      <p>Everything built into a single cycling companion for Dublin.</p>
-
-      <div class="features-grid">
-        <article class="feature-item">
-          <span class="feature-icon">🗺️</span>
-          <h3>Live station map</h3>
-          <p>Explore markers on Google Maps with real-time bike counts, dock availability and station status.</p>
-        </article>
-        <article class="feature-item">
-          <span class="feature-icon">🌤️</span>
-          <h3>Weather-aware cycling</h3>
-          <p>Live conditions and forecast charts help you decide if conditions are suitable before borrowing a bike.</p>
-        </article>
-        <article class="feature-item">
-          <span class="feature-icon">🧭</span>
-          <h3>Journey planner</h3>
-          <p>Built-in navigation tools move you from station discovery to Google Maps cycling directions in one click.</p>
-        </article>
-        <article class="feature-item">
-          <span class="feature-icon">📈</span>
-          <h3>Historical trends</h3>
-          <p>The dashboard shows 48-hour occupancy patterns so you can identify reliable stations over time.</p>
-        </article>
-        <article class="feature-item">
-          <span class="feature-icon">💡</span>
-          <h3>Ride Assistant</h3>
-          <p>A rule-based assistant gives instant practical suggestions based on station availability and live weather.</p>
-        </article>
-        <article class="feature-item">
-          <span class="feature-icon">🤖</span>
-          <h3>AI Bike Assistant</h3>
-          <p>An AI assistant answers natural-language questions about borrowing, returning, weather, and service usage.</p>
-        </article>
+    <section class="section-card">
+      <div class="section-inner">
+        <h2 class="section-title">How it helps</h2>
+        <div class="use-case-grid">
+          <article class="use-case-card">
+            <div class="use-case-step">01</div>
+            <h3>Find a nearby station</h3>
+            <p>Check live bike and dock numbers to quickly spot a practical station near your location.</p>
+          </article>
+          <article class="use-case-card">
+            <div class="use-case-step">02</div>
+            <h3>Judge the conditions</h3>
+            <p>Use current weather and forecast context to decide whether cycling makes sense right now.</p>
+          </article>
+          <article class="use-case-card">
+            <div class="use-case-step">03</div>
+            <h3>Continue the journey</h3>
+            <p>Move straight into planning and directions without repeating the same search on other services.</p>
+          </article>
+        </div>
       </div>
     </section>
 
-    <!-- CTA -->
-    <div class="about-cta" role="complementary" aria-label="Get started">
+    <section class="section-card">
+      <div class="section-inner">
+        <h2 class="section-title">Team</h2>
+        <div class="team-grid">
+          <article class="team-card">
+            <div class="team-role">Hardy</div>
+            <h3>Frontend & product polish</h3>
+            <p>Led page design, interface refinement, and the overall user-facing experience.</p>
+          </article>
+          <article class="team-card">
+            <div class="team-role">Nancy</div>
+            <h3>Integration & AI features</h3>
+            <p>Connected frontend and backend workflows and extended the platform with AI support.</p>
+          </article>
+          <article class="team-card">
+            <div class="team-role">Lily</div>
+            <h3>Backend, data & deployment</h3>
+            <p>Built the backend structure, database connections, and deployment setup.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-card">
+      <div class="section-inner">
+        <h2 class="section-title">Technology</h2>
+        <div class="stack-wrap">
+          <span class="stack-chip">Flask</span>
+          <span class="stack-chip">MySQL</span>
+          <span class="stack-chip">Google Maps API</span>
+          <span class="stack-chip">OpenWeather API</span>
+          <span class="stack-chip">Gemini AI</span>
+          <span class="stack-chip">AWS EC2</span>
+        </div>
+      </div>
+    </section>
+
+    <div class="about-cta">
       <div>
         <h2>Ready to explore Dublin Bikes?</h2>
-        <p>Open the live dashboard to check availability, get AI advice, and plan your ride.</p>
+        <p>Check live availability and move straight into your route with G8BikeShare.</p>
       </div>
       <div class="about-cta-btns">
-        <a class="btn-ghost-white" href="{{ url_for('journey_planner') }}">Journey Planner</a>
-        <a class="btn-white" href="{{ url_for('dashboard') }}">Open dashboard</a>
+        <a class="btn-ghost-white" href="{{ url_for('journey_planner') }}">Plan a journey</a>
+        <a class="btn-white" href="{{ url_for('dashboard') }}">Find a Bike</a>
       </div>
     </div>
 
   </div>
+
+  <script src="{{ url_for('static', filename='main.js') }}"></script>
 </body>
 </html>

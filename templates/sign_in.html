@@ -5,230 +5,87 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Account – G8BikeShare</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
-  <style>
-    body {
-      background: var(--bg);
-    }
-    
-    .auth-layout {
-      display: grid;
-      grid-template-columns: 1.05fr 0.95fr;
-      gap: 24px;
-      align-items: start;
-    }
-    .auth-info {
-      background: var(--surface);
-      border: 1px solid var(--line);
-      border-radius: var(--r-2xl);
-      padding: 34px;
-      box-shadow: var(--shadow-lg);
-    }
-    .auth-info h1 {
-      margin: 12px 0 14px;
-      font-size: clamp(30px, 5vw, 48px);
-      font-weight: 800;
-      letter-spacing: -0.03em;
-      line-height: 1.05;
-      color: var(--text);
-    }
-    .auth-info p {
-      margin: 0 0 22px;
-      color: var(--muted);
-      font-size: 16px;
-      line-height: 1.75;
-    }
-    .auth-feature-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin-top: 16px;
-    }
-    .auth-feature {
-      background: var(--bg);
-      border: 1px solid var(--line);
-      border-radius: var(--r-lg);
-      padding: 16px;
-    }
-    .auth-feature h3 { margin: 0 0 6px; font-size: 15px; font-weight: 800; color: var(--text); }
-    .auth-feature p { margin: 0; font-size: 13px; color: var(--muted); line-height: 1.6; }
-    .auth-right { display: flex; flex-direction: column; gap: 16px; }
-    .auth-card {
-      background: var(--surface);
-      border: 1px solid var(--line);
-      border-radius: var(--r-2xl);
-      padding: 26px;
-      box-shadow: var(--shadow-lg);
-    }
-    .auth-switch {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      background: var(--bg);
-      border: 1px solid var(--line);
-      border-radius: var(--r-lg);
-      padding: 6px;
-      margin-bottom: 20px;
-    }
-    .auth-switch button {
-      border: none;
-      background: transparent;
-      border-radius: var(--r-md);
-      padding: 10px 16px;
-      font-family: inherit;
-      font-size: 14px;
-      font-weight: 700;
-      cursor: pointer;
-      color: var(--muted);
-      transition: 0.15s;
-    }
-    .auth-switch button.active {
-      background: linear-gradient(135deg, var(--brand-mid), var(--brand));
-      color: #fff;
-      box-shadow: 0 4px 12px rgba(37,99,235,0.20);
-    }
-    .auth-card h2 { margin: 0 0 6px; font-size: 22px; font-weight: 800; color: var(--text); }
-    .auth-card .subtext { margin: 0 0 20px; color: var(--muted); font-size: 14px; line-height: 1.6; }
-    .primary-submit {
-      width: 100%; border: none;
-      border-radius: var(--r-lg);
-      padding: 13px 18px;
-      font-family: inherit;
-      font-size: 15px; font-weight: 700;
-      cursor: pointer; transition: 0.15s;
-      background: linear-gradient(135deg, var(--brand-mid), var(--brand));
-      color: #fff;
-      box-shadow: var(--shadow-brand);
-      margin-top: 6px;
-    }
-    .primary-submit:hover { transform: translateY(-1px); }
-    .primary-submit:disabled { opacity: 0.65; cursor: not-allowed; transform: none; }
-    .secondary-btn {
-      width: 100%; border: 1px solid var(--line);
-      border-radius: var(--r-lg);
-      padding: 11px 18px;
-      font-family: inherit;
-      font-size: 14px; font-weight: 700;
-      cursor: pointer; transition: 0.15s;
-      background: var(--bg); color: var(--brand);
-      margin-top: 10px;
-    }
-    .secondary-btn:hover { background: var(--brand-pale); }
-    .message-box { display: none; margin-top: 14px; padding: 12px 14px; border-radius: var(--r-lg); font-size: 14px; line-height: 1.6; border: 1px solid transparent; }
-    .message-box.success { display: block; background: var(--green-pale); color: #166534; border-color: var(--green-border); }
-    .message-box.error { display: block; background: var(--red-pale); color: #991b1b; border-color: var(--red-border); }
-    .session-card {
-      background: var(--surface);
-      border: 1px solid var(--line);
-      border-radius: var(--r-xl);
-      padding: 20px 22px;
-      box-shadow: var(--shadow-md);
-    }
-    .session-card h3 { margin: 0 0 12px; font-size: 17px; font-weight: 800; color: var(--text); }
-    .session-row { margin-bottom: 10px; color: var(--muted); font-size: 14px; line-height: 1.6; }
-    .session-user { font-weight: 800; color: var(--text); }
-    .session-status {
-      display: inline-flex; align-items: center; gap: 6px;
-      border-radius: var(--r-pill); padding: 6px 12px;
-      font-size: 12px; font-weight: 700; margin-bottom: 10px;
-    }
-    .session-status.signed-in { background: var(--green-pale); color: var(--green); }
-    .session-status.guest { background: var(--line-light); color: var(--muted); }
-    .hidden { display: none; }
-    @media (max-width: 980px) { .auth-layout { grid-template-columns: 1fr; } }
-    @media (max-width: 600px) { .auth-feature-grid { grid-template-columns: 1fr; } }
-  </style>
 </head>
 <body>
   <div class="page-shell">
 
-    <nav class="g8-nav" role="navigation" aria-label="Main navigation">
-      <a class="g8-brand" href="{{ url_for('home') }}" aria-label="G8BikeShare Home">
+    <nav class="g8-nav">
+      <a class="g8-brand" href="{{ url_for('home') }}">
         <div class="g8-brand-mark">
-          <svg viewBox="0 0 22 22" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <circle cx="5.5" cy="15.5" r="3"/>
-            <circle cx="16.5" cy="15.5" r="3"/>
-            <path d="M5.5 15.5L8.5 8L12 15.5H16.5"/>
-            <path d="M8.5 8H14"/>
-          </svg>
+          <svg viewBox="0 0 22 22" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="15.5" r="3"/><circle cx="16.5" cy="15.5" r="3"/><path d="M5.5 15.5L8.5 8L12 15.5H16.5"/><path d="M8.5 8H14"/></svg>
         </div>
         <div class="g8-brand-text">
           <span class="g8-brand-name"><span class="g8-brand-accent">G8</span>BikeShare</span>
-          <span class="g8-brand-sub">Smart Dublin Bike Companion</span>
         </div>
       </a>
-      <nav class="g8-nav-links" aria-label="Page links">
+
+      <div class="g8-nav-links">
         <a href="{{ url_for('home') }}">Home</a>
-        <a href="{{ url_for('dashboard') }}">Dashboard</a>
+        <a href="{{ url_for('dashboard') }}">Find a Bike</a> 
         <a href="{{ url_for('journey_planner') }}">Journey</a>
         <a href="{{ url_for('weather_page') }}">Weather</a>
         <a href="{{ url_for('about') }}">About</a>
-        <a href="{{ url_for('sign_in') }}" class="active" aria-current="page">Account</a>
-      </nav>
-      <div class="g8-nav-actions">
-        <a class="btn" href="{{ url_for('dashboard') }}">Dashboard</a>
+      </div>
+
+      <div class="g8-nav-actions">        
+        <a href="{{ url_for('sign_in') }}" class="nav-signin-link" id="navSignInLink">Sign In</a>
+
+        <div class="nav-avatar-wrap">
+          <button class="nav-avatar-btn" id="navAvatarBtn">
+            <span class="nav-avatar-icon">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21a8 8 0 0 0-16 0"></path><circle cx="12" cy="8" r="4"></circle></svg>
+            </span>
+          </button>
+          
+          <div class="nav-avatar-menu" id="navAvatarMenu">
+            <div class="nav-avatar-user">
+              <strong id="navAvatarUsername">Guest</strong>
+              <span id="navAvatarSubtext">Not signed in</span>
+            </div>
+            <a href="{{ url_for('home') }}" class="nav-avatar-link">Back to Home</a>
+            <button class="nav-avatar-action hidden" id="navLogoutBtn">Log Out</button>
+          </div>
+        </div>
       </div>
     </nav>
 
     <div class="auth-layout">
-      <section class="auth-info">
-        <div class="pill pill-blue">Account access · Login and registration</div>
-        <h1>Your G8BikeShare account.</h1>
-        <p>Sign in or create an account to continue using G8BikeShare.</p>
-        <div class="auth-feature-grid">
-          <div class="auth-feature">
-            <h3>Register new users</h3>
-            <p>Create an account with a username and password in seconds.</p>
-          </div>
-          <div class="auth-feature">
-            <h3>Session status</h3>
-            <p>See whether you're currently signed in and which account is active.</p>
-          </div>
-          <div class="auth-feature">
-            <h3>Dashboard access</h3>
-            <p>After login, you're redirected to the live dashboard automatically.</p>
-          </div>
+      <section class="auth-card">
+        <div class="auth-switch">
+          <button id="modeLoginBtn" class="active" type="button">Sign in</button>
+          <button id="modeRegisterBtn" type="button">Sign up</button>
         </div>
-      </section>
 
-      <div class="auth-right">
-        <section class="auth-card">
-          <div class="auth-switch">
-            <button id="modeLoginBtn" class="active" type="button">Sign in</button>
-            <button id="modeRegisterBtn" type="button">Register</button>
+        <h2 id="formTitle">Sign in</h2>
+        <p class="subtext" id="formSubtitle">Enter your username and password to sign in.</p>
+
+        <form id="authForm">
+          <div class="form-group">
+            <label class="form-label" for="usernameInput">Username</label>
+            <input id="usernameInput" class="form-input" name="username" type="text" placeholder="e.g. hardy" required />
           </div>
-          <h2 id="formTitle">Sign in</h2>
-          <p class="subtext" id="formSubtitle">Enter your username and password to sign in.</p>
-          <form id="authForm">
-            <div class="form-group">
-              <label class="form-label" for="usernameInput">Username</label>
-              <input id="usernameInput" class="form-input" name="username" type="text" placeholder="e.g. hardy" required />
-              <div class="form-hint">Uses username rather than email to match the backend API.</div>
-            </div>
-            <div class="form-group">
-              <label class="form-label" for="passwordInput">Password</label>
-              <input id="passwordInput" class="form-input" name="password" type="password" placeholder="At least 6 characters" required />
-            </div>
-            <div class="form-group hidden" id="confirmPasswordGroup">
-              <label class="form-label" for="confirmPasswordInput">Confirm password</label>
-              <input id="confirmPasswordInput" class="form-input" type="password" placeholder="Repeat your password" />
-            </div>
-            <button class="primary-submit" id="submitBtn" type="submit">Sign in</button>
-          </form>
-          <div id="messageBox" class="message-box"></div>
-        </section>
 
-        <section class="session-card">
-          <h3>Current session</h3>
-          <div id="sessionStatus" class="session-status guest">Guest session</div>
-          <div class="session-row" id="sessionText">No user is currently signed in.</div>
-          <button id="logoutBtn" class="secondary-btn hidden" type="button">Log out</button>
-        </section>
-      </div>
+          <div class="form-group">
+            <label class="form-label" for="passwordInput">Password</label>
+            <input id="passwordInput" class="form-input" name="password" type="password" placeholder="At least 6 characters" required />
+          </div>
+
+          <div class="form-group hidden" id="confirmPasswordGroup">
+            <label class="form-label" for="confirmPasswordInput">Confirm password</label>
+            <input id="confirmPasswordInput" class="form-input" type="password" placeholder="Repeat your password" />
+          </div>
+
+          <button class="primary-submit" id="submitBtn" type="submit">Sign in</button>
+        </form>
+
+        <div id="messageBox" class="message-box"></div>
+      </section>
     </div>
   </div>
 
   <script>
     let currentMode = "login";
+
     const modeLoginBtn = document.getElementById("modeLoginBtn");
     const modeRegisterBtn = document.getElementById("modeRegisterBtn");
     const formTitle = document.getElementById("formTitle");
@@ -240,15 +97,10 @@
     const confirmPasswordGroup = document.getElementById("confirmPasswordGroup");
     const confirmPasswordInput = document.getElementById("confirmPasswordInput");
     const messageBox = document.getElementById("messageBox");
-    const sessionStatus = document.getElementById("sessionStatus");
-    const sessionText = document.getElementById("sessionText");
-    const logoutBtn = document.getElementById("logoutBtn");
 
-    document.addEventListener("DOMContentLoaded", async () => {
+    document.addEventListener("DOMContentLoaded", () => {
       setupModeSwitch();
       setupFormSubmit();
-      setupLogout();
-      await refreshSession();
     });
 
     function setupModeSwitch() {
@@ -270,7 +122,7 @@
       } else {
         modeRegisterBtn.classList.add("active");
         modeLoginBtn.classList.remove("active");
-        formTitle.textContent = "Register";
+        formTitle.textContent = "Sign up";
         formSubtitle.textContent = "Create a new account using a username and password.";
         submitBtn.textContent = "Create account";
         confirmPasswordGroup.classList.remove("hidden");
@@ -281,30 +133,48 @@
       authForm.addEventListener("submit", async (event) => {
         event.preventDefault();
         clearMessage();
+
         const username = usernameInput.value.trim();
         const password = passwordInput.value;
         const confirmPassword = confirmPasswordInput.value;
-        if (!username || !password) { showMessage("Please enter both username and password.", "error"); return; }
+
         if (currentMode === "register") {
-          if (password.length < 6) { showMessage("Password must be at least 6 characters.", "error"); return; }
-          if (password !== confirmPassword) { showMessage("Passwords do not match.", "error"); return; }
+          if (password.length < 6) {
+            showMessage("Password must be at least 6 characters.", "error");
+            return;
+          }
+          if (password !== confirmPassword) {
+            showMessage("Passwords do not match.", "error");
+            return;
+          }
         }
+
         const endpoint = currentMode === "login" ? "/api/auth/login" : "/api/auth/register";
+
         try {
           submitBtn.disabled = true;
-          submitBtn.textContent = currentMode === "login" ? "Signing in..." : "Creating account...";
+          submitBtn.textContent = "Processing...";
+
           const response = await fetch(endpoint, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ username, password })
           });
+
           const result = await response.json();
-          if (!result.ok) { showMessage(result.error || "Authentication failed.", "error"); return; }
-          showMessage(result.message || "Success.", "success");
-          authForm.reset();
-          if (currentMode === "register") confirmPasswordGroup.classList.remove("hidden");
-          await refreshSession();
-          setTimeout(() => { window.location.href = "/dashboard"; }, 900);
+
+          if (!result.ok) {
+            showMessage(result.error || "Authentication failed.", "error");
+            return;
+          }
+
+          showMessage(result.message || "Success! Redirecting...", "success");
+          
+          // 登入成功後，重新導向到 Find a Bike (Dashboard)
+          setTimeout(() => {
+            window.location.href = "/dashboard";
+          }, 800);
+
         } catch {
           showMessage("Request failed. Please try again.", "error");
         } finally {
@@ -314,56 +184,17 @@
       });
     }
 
-    function setupLogout() {
-      logoutBtn.addEventListener("click", async () => {
-        clearMessage();
-        try {
-          const response = await fetch("/api/auth/logout", { method: "POST" });
-          const result = await response.json();
-          if (!result.ok) { showMessage(result.error || "Logout failed.", "error"); return; }
-          showMessage("Logged out successfully.", "success");
-          await refreshSession();
-          setMode("login");
-        } catch {
-          showMessage("Logout request failed.", "error");
-        }
-      });
-    }
-
-    async function refreshSession() {
-      try {
-        const response = await fetch("/api/auth/me");
-        const result = await response.json();
-        if (result.authenticated && result.user) {
-          sessionStatus.textContent = "Signed in";
-          sessionStatus.className = "session-status signed-in";
-          sessionText.innerHTML = `Current user: <span class="session-user">${escapeHtml(result.user.username)}</span>`;
-          logoutBtn.classList.remove("hidden");
-        } else {
-          sessionStatus.textContent = "Guest session";
-          sessionStatus.className = "session-status guest";
-          sessionText.textContent = "No user is currently signed in.";
-          logoutBtn.classList.add("hidden");
-        }
-      } catch {
-        sessionStatus.textContent = "Unknown";
-        sessionStatus.className = "session-status guest";
-        sessionText.textContent = "Could not load session state.";
-        logoutBtn.classList.add("hidden");
-      }
-    }
-
     function showMessage(message, type) {
       messageBox.textContent = message;
       messageBox.className = `message-box ${type}`;
     }
+
     function clearMessage() {
       messageBox.textContent = "";
       messageBox.className = "message-box";
     }
-    function escapeHtml(value) {
-      return String(value).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
-    }
   </script>
+
+  <script src="{{ url_for('static', filename='main.js') }}"></script>
 </body>
 </html>
