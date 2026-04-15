@@ -27,16 +27,16 @@
       gap: 12px;
       flex-wrap: wrap;
       background: rgba(255,255,255,0.97);
-      border: 1px solid var(--line);
-      border-radius: var(--r-2xl);
-      padding: 12px 18px;
-      box-shadow: var(--shadow-md);
-      margin-bottom: 22px;
+      border: 1px solid #e5e7eb;
+      border-radius: 18px;
+      padding: 14px 20px;
+      box-shadow: 0 4px 20px rgba(15,23,42,0.06);
+      margin-bottom: 20px;
       position: sticky;
       top: 12px;
       z-index: 40;
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
     }
 
     .topbar-right {
@@ -53,7 +53,7 @@
       padding: 6px 12px;
       border-radius: var(--r-pill);
       font-size: 12.5px;
-      font-weight: 700;
+      font-weight: 600;
       background: var(--line-light);
       color: var(--muted);
       border: 1px solid var(--line);
@@ -95,11 +95,15 @@
 
     /* ── Map panel ── */
     .map-panel {
+      position: sticky;
+      top: 90px;
       background: var(--surface);
       border: 1px solid var(--line);
       border-radius: var(--r-2xl);
       padding: 22px;
       box-shadow: var(--shadow-md);
+      max-height: calc(100vh - 110px);
+      overflow-y: auto;
     }
 
     .panel-header {
@@ -155,6 +159,7 @@
       border: 1px solid var(--line);
       margin-top: 2px;
     }
+
 
     .map-error {
       height: 580px;
@@ -321,6 +326,41 @@
       margin-top: 12px;
     }
 
+    /* Station action buttons */
+    .station-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+    }
+
+    .station-actions .btn,
+    .station-actions .ghost-btn {
+      min-height: 48px;
+    }
+
+    .ghost-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px 16px;
+      font-weight: 700;
+      cursor: pointer;
+      background: #fff;
+      color: var(--text);
+      text-decoration: none;
+      box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+      transition: 0.15s ease;
+    }
+
+    .ghost-btn:hover {
+      transform: translateY(-1px);
+      background: var(--bg);
+    }
+
     /* AI assistant */
     .ai-chat-messages {
       height: 230px;
@@ -409,20 +449,165 @@
       color: var(--muted);
       min-height: 18px;
     }
+    
+    .prediction-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 12px;
+    }
+    
+    .prediction-item {
+      background: var(--bg);
+      border: 1px solid var(--line);
+      border-radius: var(--r-lg);
+      padding: 12px;
+    }
+
+    .prediction-hour {
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--brand);
+      margin-bottom: 6px;
+    }
+      
+    .prediction-main {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+      
+    .prediction-sub {
+      font-size: 12.5px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+      
+    .prediction-tag {
+      display: inline-flex;
+      align-items: center;
+      margin-top: 8px;
+      padding: 5px 10px;
+      border-radius: var(--r-pill);
+      font-size: 11.5px;
+      font-weight: 700;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--text-2);
+    }
+      
+    .prediction-actions {
+      margin-top: 14px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+      
+    .prediction-24h {
+      margin-top: 14px;
+      display: grid;
+      gap: 8px;
+    }
+      
+    .prediction-24h-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 12px;
+      border-radius: var(--r-md);
+      border: 1px solid var(--line);
+      background: var(--bg);
+      font-size: 13px;
+    }
 
     /* Responsive */
     @media (max-width: 1100px) {
-      .dashboard-layout { grid-template-columns: 1fr; }
+      .dashboard-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .map-panel {
+        position: static;
+        top: auto;
+        max-height: none;
+        overflow: visible;
+      }
+
+      #map {
+        height: 460px;
+      }
+
+      .station-actions {
+        flex-direction: column;
+      }
+
+      .station-actions .btn,
+      .station-actions .ghost-btn {
+        width: 100%;
+      }
     }
 
     @media (max-width: 720px) {
-      .topbar-right { gap: 6px; }
-      .search-wrap { order: 10; max-width: 100%; width: 100%; }
-      #map { height: 420px; }
-      .station-meta-grid,
-      .weather-mini-grid { grid-template-columns: 1fr; }
-      .ai-chat-form { flex-direction: column; }
+      .container {
+        padding: 12px;
+      }
+
+      .topbar {
+        position: static;
+        top: auto;
+        padding: 14px;
+        border-radius: 20px;
+      }
+
+      .topbar-right {
+        gap: 6px;
+        width: 100%;
+      }
+
+      .search-wrap {
+        order: 10;
+        max-width: 100%;
+        width: 100%;
+      }
+
+      #map {
+        height: 360px;
+      }
+
+      .map-panel,
+      .sidebar-card {
+        padding: 16px;
+        border-radius: 18px;
+      }
+      
+      .station-meta,
+      .weather-mini-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .ai-chat-form {
+        flex-direction: column;
+      }
+
+      .ai-chat-input,
+      .ai-send-btn,
+      .station-actions .btn,
+      .station-actions .ghost-btn {
+        width: 100%;
+      }
+
+      .prediction-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .prediction-24h-row {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      
     }
+
   </style>
 </head>
 <body>
@@ -432,20 +617,11 @@
     <nav class="topbar" role="navigation" aria-label="Main navigation">
       <a class="g8-brand" href="{{ url_for('home') }}" aria-label="G8BikeShare Home">
         <div class="g8-brand-mark">
-          <svg viewBox="0 0 64 64" aria-hidden="true">
-            <defs>
-              <linearGradient id="g8grad-d" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="#60a5fa"/>
-                <stop offset="100%" stop-color="#1d4ed8"/>
-              </linearGradient>
-            </defs>
-            <rect x="4" y="4" width="56" height="56" rx="16" fill="url(#g8grad-d)"/>
-            <circle cx="21" cy="42" r="8" fill="none" stroke="white" stroke-width="3"/>
-            <circle cx="43" cy="42" r="8" fill="none" stroke="white" stroke-width="3"/>
-            <path d="M21 42 L28 27 L35 42 L43 42" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M28 27 H37" fill="none" stroke="white" stroke-width="3" stroke-linecap="round"/>
-            <path d="M31 20 C25 20,25 29,31 29 C37 29,37 20,31 20 Z" fill="none" stroke="white" stroke-width="2.4"/>
-            <path d="M39 20 C33 20,33 29,39 29 C45 29,45 20,39 20 Z" fill="none" stroke="white" stroke-width="2.4"/>
+          <svg viewBox="0 0 22 22" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="5.5" cy="15.5" r="3"/>
+            <circle cx="16.5" cy="15.5" r="3"/>
+            <path d="M5.5 15.5L8.5 8L12 15.5H16.5"/>
+            <path d="M8.5 8H14"/>
           </svg>
         </div>
         <div class="g8-brand-text">
@@ -505,8 +681,10 @@
             </div>
           </div>
         </div>
-
+        
+        
         <div id="map" role="application" aria-label="Interactive station map"></div>
+
 
         <div class="map-legend" role="list" aria-label="Map legend">
           <span role="listitem"><i class="legend-dot green"></i>Good availability</span>
@@ -529,6 +707,12 @@
         <div class="sidebar-card" id="weather-card">
           <h2 class="sidebar-card-title">Current Weather</h2>
           <p class="text-muted text-sm">Loading weather...</p>
+        </div>
+
+        <!-- Prediction -->
+        <div class="sidebar-card" id="prediction-card">
+          <h2 class="sidebar-card-title">Bike & Weather Outlook</h2>
+          <p class="text-muted text-sm">Select a station to view the next 4 hours.</p>
         </div>
 
         <!-- 48-hour trend chart -->

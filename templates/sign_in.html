@@ -7,60 +7,27 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
   <style>
     body {
-      background:
-        radial-gradient(ellipse at top right, rgba(59,130,246,0.08) 0%, transparent 55%),
-        radial-gradient(ellipse at bottom left, rgba(30,64,175,0.05) 0%, transparent 55%),
-        var(--bg);
-    }
-    .auth-layout {
-      display: grid;
-      grid-template-columns: 1.05fr 0.95fr;
-      gap: 24px;
-      align-items: start;
-    }
-    .auth-info {
-      background: var(--surface);
-      border: 1px solid var(--line);
-      border-radius: var(--r-2xl);
-      padding: 34px;
-      box-shadow: var(--shadow-lg);
-    }
-    .auth-info h1 {
-      margin: 12px 0 14px;
-      font-size: clamp(30px, 5vw, 48px);
-      font-weight: 800;
-      letter-spacing: -0.03em;
-      line-height: 1.05;
-      color: var(--text);
-    }
-    .auth-info p {
-      margin: 0 0 22px;
-      color: var(--muted);
-      font-size: 16px;
-      line-height: 1.75;
-    }
-    .auth-feature-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin-top: 16px;
-    }
-    .auth-feature {
       background: var(--bg);
-      border: 1px solid var(--line);
-      border-radius: var(--r-lg);
-      padding: 16px;
     }
-    .auth-feature h3 { margin: 0 0 6px; font-size: 15px; font-weight: 800; color: var(--text); }
-    .auth-feature p { margin: 0; font-size: 13px; color: var(--muted); line-height: 1.6; }
-    .auth-right { display: flex; flex-direction: column; gap: 16px; }
+
+    .auth-layout {
+      min-height: calc(100vh - 180px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px 0 10px;
+    }
+
     .auth-card {
+      width: 100%;
+      max-width: 560px;
       background: var(--surface);
       border: 1px solid var(--line);
       border-radius: var(--r-2xl);
-      padding: 26px;
+      padding: 28px;
       box-shadow: var(--shadow-lg);
     }
+
     .auth-switch {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -69,8 +36,9 @@
       border: 1px solid var(--line);
       border-radius: var(--r-lg);
       padding: 6px;
-      margin-bottom: 20px;
+      margin-bottom: 22px;
     }
+
     .auth-switch button {
       border: none;
       background: transparent;
@@ -83,61 +51,208 @@
       color: var(--muted);
       transition: 0.15s;
     }
+
     .auth-switch button.active {
       background: linear-gradient(135deg, var(--brand-mid), var(--brand));
       color: #fff;
       box-shadow: 0 4px 12px rgba(37,99,235,0.20);
     }
-    .auth-card h2 { margin: 0 0 6px; font-size: 22px; font-weight: 800; color: var(--text); }
-    .auth-card .subtext { margin: 0 0 20px; color: var(--muted); font-size: 14px; line-height: 1.6; }
+
+    .auth-card h2 {
+      margin: 0 0 6px;
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--text);
+      letter-spacing: -0.02em;
+    }
+
+    .auth-card .subtext {
+      margin: 0 0 22px;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.7;
+    }
+
     .primary-submit {
-      width: 100%; border: none;
+      width: 100%;
+      border: none;
       border-radius: var(--r-lg);
       padding: 13px 18px;
       font-family: inherit;
-      font-size: 15px; font-weight: 700;
-      cursor: pointer; transition: 0.15s;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: 0.15s;
       background: linear-gradient(135deg, var(--brand-mid), var(--brand));
       color: #fff;
       box-shadow: var(--shadow-brand);
-      margin-top: 6px;
+      margin-top: 8px;
     }
-    .primary-submit:hover { transform: translateY(-1px); }
-    .primary-submit:disabled { opacity: 0.65; cursor: not-allowed; transform: none; }
-    .secondary-btn {
-      width: 100%; border: 1px solid var(--line);
+
+    .primary-submit:hover {
+      transform: translateY(-1px);
+    }
+
+    .primary-submit:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .message-box {
+      display: none;
+      margin-top: 14px;
+      padding: 12px 14px;
       border-radius: var(--r-lg);
-      padding: 11px 18px;
-      font-family: inherit;
-      font-size: 14px; font-weight: 700;
-      cursor: pointer; transition: 0.15s;
-      background: var(--bg); color: var(--brand);
-      margin-top: 10px;
+      font-size: 14px;
+      line-height: 1.6;
+      border: 1px solid transparent;
     }
-    .secondary-btn:hover { background: var(--brand-pale); }
-    .message-box { display: none; margin-top: 14px; padding: 12px 14px; border-radius: var(--r-lg); font-size: 14px; line-height: 1.6; border: 1px solid transparent; }
-    .message-box.success { display: block; background: var(--green-pale); color: #166534; border-color: var(--green-border); }
-    .message-box.error { display: block; background: var(--red-pale); color: #991b1b; border-color: var(--red-border); }
-    .session-card {
-      background: var(--surface);
+
+    .message-box.success {
+      display: block;
+      background: var(--green-pale);
+      color: #166534;
+      border-color: var(--green-border);
+    }
+
+    .message-box.error {
+      display: block;
+      background: var(--red-pale);
+      color: #991b1b;
+      border-color: var(--red-border);
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    /* Nav avatar */
+    .g8-nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      position: relative;
+    }
+
+    .nav-avatar-wrap {
+      position: relative;
+    }
+
+    .nav-avatar-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
       border: 1px solid var(--line);
-      border-radius: var(--r-xl);
-      padding: 20px 22px;
+      background: #d1d5db;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      overflow: hidden;
+      transition: 0.15s ease;
+      box-shadow: var(--shadow-sm);
+      padding: 0;
+    }
+
+    .nav-avatar-btn:hover {
+      transform: translateY(-1px);
       box-shadow: var(--shadow-md);
     }
-    .session-card h3 { margin: 0 0 12px; font-size: 17px; font-weight: 800; color: var(--text); }
-    .session-row { margin-bottom: 10px; color: var(--muted); font-size: 14px; line-height: 1.6; }
-    .session-user { font-weight: 800; color: var(--text); }
-    .session-status {
-      display: inline-flex; align-items: center; gap: 6px;
-      border-radius: var(--r-pill); padding: 6px 12px;
-      font-size: 12px; font-weight: 700; margin-bottom: 10px;
+
+    .nav-avatar-btn img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
     }
-    .session-status.signed-in { background: var(--green-pale); color: var(--green); }
-    .session-status.guest { background: var(--line-light); color: var(--muted); }
-    .hidden { display: none; }
-    @media (max-width: 980px) { .auth-layout { grid-template-columns: 1fr; } }
-    @media (max-width: 600px) { .auth-feature-grid { grid-template-columns: 1fr; } }
+
+    .nav-avatar-icon {
+      width: 22px;
+      height: 22px;
+      color: #6b7280;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .nav-avatar-menu {
+      position: absolute;
+      top: calc(100% + 10px);
+      right: 0;
+      min-width: 190px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--r-lg);
+      box-shadow: var(--shadow-lg);
+      padding: 10px;
+      display: none;
+      z-index: 50;
+    }
+
+    .nav-avatar-menu.open {
+      display: block;
+    }
+
+    .nav-avatar-user {
+      padding: 8px 10px 10px;
+      border-bottom: 1px solid var(--line);
+      margin-bottom: 8px;
+    }
+
+    .nav-avatar-user strong {
+      display: block;
+      font-size: 14px;
+      color: var(--text);
+      margin-bottom: 2px;
+    }
+
+    .nav-avatar-user span {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .nav-avatar-link,
+    .nav-avatar-action {
+      width: 100%;
+      display: block;
+      text-align: left;
+      background: transparent;
+      border: none;
+      border-radius: var(--r-md);
+      padding: 10px 12px;
+      font: inherit;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .nav-avatar-link:hover,
+    .nav-avatar-action:hover {
+      background: var(--bg);
+    }
+
+    @media (max-width: 720px) {
+      .auth-layout {
+        min-height: auto;
+        padding: 10px 0 0;
+      }
+
+      .auth-card {
+        padding: 22px;
+      }
+
+      .g8-nav-actions {
+        gap: 8px;
+      }
+
+      .nav-avatar-btn {
+        width: 40px;
+        height: 40px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -146,15 +261,11 @@
     <nav class="g8-nav" role="navigation" aria-label="Main navigation">
       <a class="g8-brand" href="{{ url_for('home') }}" aria-label="G8BikeShare Home">
         <div class="g8-brand-mark">
-          <svg viewBox="0 0 64 64" aria-hidden="true">
-            <defs><linearGradient id="g8grad-s" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#60a5fa"/><stop offset="100%" stop-color="#1d4ed8"/></linearGradient></defs>
-            <rect x="4" y="4" width="56" height="56" rx="16" fill="url(#g8grad-s)"/>
-            <circle cx="21" cy="42" r="8" fill="none" stroke="white" stroke-width="3"/>
-            <circle cx="43" cy="42" r="8" fill="none" stroke="white" stroke-width="3"/>
-            <path d="M21 42 L28 27 L35 42 L43 42" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M28 27 H37" fill="none" stroke="white" stroke-width="3" stroke-linecap="round"/>
-            <path d="M31 20 C25 20,25 29,31 29 C37 29,37 20,31 20 Z" fill="none" stroke="white" stroke-width="2.4"/>
-            <path d="M39 20 C33 20,33 29,39 29 C45 29,45 20,39 20 Z" fill="none" stroke="white" stroke-width="2.4"/>
+          <svg viewBox="0 0 22 22" fill="none" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="5.5" cy="15.5" r="3"/>
+            <circle cx="16.5" cy="15.5" r="3"/>
+            <path d="M5.5 15.5L8.5 8L12 15.5H16.5"/>
+            <path d="M8.5 8H14"/>
           </svg>
         </div>
         <div class="g8-brand-text">
@@ -162,6 +273,7 @@
           <span class="g8-brand-sub">Smart Dublin Bike Companion</span>
         </div>
       </a>
+
       <nav class="g8-nav-links" aria-label="Page links">
         <a href="{{ url_for('home') }}">Home</a>
         <a href="{{ url_for('dashboard') }}">Dashboard</a>
@@ -170,71 +282,76 @@
         <a href="{{ url_for('about') }}">About</a>
         <a href="{{ url_for('sign_in') }}" class="active" aria-current="page">Account</a>
       </nav>
+
       <div class="g8-nav-actions">
-        <a class="btn" href="{{ url_for('dashboard') }}">Open Dashboard</a>
+        <a class="btn" href="{{ url_for('dashboard') }}">Dashboard</a>
+
+        <div class="nav-avatar-wrap">
+          <button
+            id="navAvatarBtn"
+            class="nav-avatar-btn"
+            type="button"
+            aria-label="User menu"
+            aria-expanded="false"
+          >
+            <span class="nav-avatar-icon" id="navAvatarFallback">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M20 21a8 8 0 0 0-16 0"></path>
+                <circle cx="12" cy="8" r="4"></circle>
+              </svg>
+            </span>
+          </button>
+
+          <div id="navAvatarMenu" class="nav-avatar-menu" aria-hidden="true">
+            <div class="nav-avatar-user">
+              <strong id="navAvatarUsername">Guest</strong>
+              <span id="navAvatarSubtext">Not signed in</span>
+            </div>
+            <a class="nav-avatar-link" href="{{ url_for('sign_in') }}" id="navAccountLink">Account</a>
+            <button class="nav-avatar-action hidden" id="navLogoutBtn" type="button">Log out</button>
+          </div>
+        </div>
       </div>
     </nav>
 
     <div class="auth-layout">
-      <section class="auth-info">
-        <div class="pill pill-blue">Account access · Login and registration</div>
-        <h1>Your G8BikeShare account.</h1>
-        <p>Sign in or create an account to continue using G8BikeShare.</p>
-        <div class="auth-feature-grid">
-          <div class="auth-feature">
-            <h3>Register new users</h3>
-            <p>Create an account with a username and password in seconds.</p>
-          </div>
-          <div class="auth-feature">
-            <h3>Session status</h3>
-            <p>See whether you're currently signed in and which account is active.</p>
-          </div>
-          <div class="auth-feature">
-            <h3>Dashboard access</h3>
-            <p>After login, you're redirected to the live dashboard automatically.</p>
-          </div>
+      <section class="auth-card">
+        <div class="auth-switch">
+          <button id="modeLoginBtn" class="active" type="button">Sign in</button>
+          <button id="modeRegisterBtn" type="button">Sign up</button>
         </div>
-      </section>
 
-      <div class="auth-right">
-        <section class="auth-card">
-          <div class="auth-switch">
-            <button id="modeLoginBtn" class="active" type="button">Sign in</button>
-            <button id="modeRegisterBtn" type="button">Register</button>
+        <h2 id="formTitle">Sign in</h2>
+        <p class="subtext" id="formSubtitle">Enter your username and password to sign in.</p>
+
+        <form id="authForm">
+          <div class="form-group">
+            <label class="form-label" for="usernameInput">Username</label>
+            <input id="usernameInput" class="form-input" name="username" type="text" placeholder="e.g. hardy" required />
+            <div class="form-hint">Uses username rather than email to match the backend API.</div>
           </div>
-          <h2 id="formTitle">Sign in</h2>
-          <p class="subtext" id="formSubtitle">Enter your username and password to sign in.</p>
-          <form id="authForm">
-            <div class="form-group">
-              <label class="form-label" for="usernameInput">Username</label>
-              <input id="usernameInput" class="form-input" name="username" type="text" placeholder="e.g. hardy" required />
-              <div class="form-hint">Uses username rather than email to match the backend API.</div>
-            </div>
-            <div class="form-group">
-              <label class="form-label" for="passwordInput">Password</label>
-              <input id="passwordInput" class="form-input" name="password" type="password" placeholder="At least 6 characters" required />
-            </div>
-            <div class="form-group hidden" id="confirmPasswordGroup">
-              <label class="form-label" for="confirmPasswordInput">Confirm password</label>
-              <input id="confirmPasswordInput" class="form-input" type="password" placeholder="Repeat your password" />
-            </div>
-            <button class="primary-submit" id="submitBtn" type="submit">Sign in</button>
-          </form>
-          <div id="messageBox" class="message-box"></div>
-        </section>
 
-        <section class="session-card">
-          <h3>Current session</h3>
-          <div id="sessionStatus" class="session-status guest">Guest session</div>
-          <div class="session-row" id="sessionText">No user is currently signed in.</div>
-          <button id="logoutBtn" class="secondary-btn hidden" type="button">Log out</button>
-        </section>
-      </div>
+          <div class="form-group">
+            <label class="form-label" for="passwordInput">Password</label>
+            <input id="passwordInput" class="form-input" name="password" type="password" placeholder="At least 6 characters" required />
+          </div>
+
+          <div class="form-group hidden" id="confirmPasswordGroup">
+            <label class="form-label" for="confirmPasswordInput">Confirm password</label>
+            <input id="confirmPasswordInput" class="form-input" type="password" placeholder="Repeat your password" />
+          </div>
+
+          <button class="primary-submit" id="submitBtn" type="submit">Sign in</button>
+        </form>
+
+        <div id="messageBox" class="message-box"></div>
+      </section>
     </div>
   </div>
 
   <script>
     let currentMode = "login";
+
     const modeLoginBtn = document.getElementById("modeLoginBtn");
     const modeRegisterBtn = document.getElementById("modeRegisterBtn");
     const formTitle = document.getElementById("formTitle");
@@ -246,13 +363,17 @@
     const confirmPasswordGroup = document.getElementById("confirmPasswordGroup");
     const confirmPasswordInput = document.getElementById("confirmPasswordInput");
     const messageBox = document.getElementById("messageBox");
-    const sessionStatus = document.getElementById("sessionStatus");
-    const sessionText = document.getElementById("sessionText");
-    const logoutBtn = document.getElementById("logoutBtn");
+
+    const navAvatarBtn = document.getElementById("navAvatarBtn");
+    const navAvatarMenu = document.getElementById("navAvatarMenu");
+    const navAvatarUsername = document.getElementById("navAvatarUsername");
+    const navAvatarSubtext = document.getElementById("navAvatarSubtext");
+    const navLogoutBtn = document.getElementById("navLogoutBtn");
 
     document.addEventListener("DOMContentLoaded", async () => {
       setupModeSwitch();
       setupFormSubmit();
+      setupAvatarMenu();
       setupLogout();
       await refreshSession();
     });
@@ -265,6 +386,7 @@
     function setMode(mode) {
       currentMode = mode;
       clearMessage();
+
       if (mode === "login") {
         modeLoginBtn.classList.add("active");
         modeRegisterBtn.classList.remove("active");
@@ -276,7 +398,7 @@
       } else {
         modeRegisterBtn.classList.add("active");
         modeLoginBtn.classList.remove("active");
-        formTitle.textContent = "Register";
+        formTitle.textContent = "Sign up";
         formSubtitle.textContent = "Create a new account using a username and password.";
         submitBtn.textContent = "Create account";
         confirmPasswordGroup.classList.remove("hidden");
@@ -287,30 +409,58 @@
       authForm.addEventListener("submit", async (event) => {
         event.preventDefault();
         clearMessage();
+
         const username = usernameInput.value.trim();
         const password = passwordInput.value;
         const confirmPassword = confirmPasswordInput.value;
-        if (!username || !password) { showMessage("Please enter both username and password.", "error"); return; }
-        if (currentMode === "register") {
-          if (password.length < 6) { showMessage("Password must be at least 6 characters.", "error"); return; }
-          if (password !== confirmPassword) { showMessage("Passwords do not match.", "error"); return; }
+
+        if (!username || !password) {
+          showMessage("Please enter both username and password.", "error");
+          return;
         }
+
+        if (currentMode === "register") {
+          if (password.length < 6) {
+            showMessage("Password must be at least 6 characters.", "error");
+            return;
+          }
+          if (password !== confirmPassword) {
+            showMessage("Passwords do not match.", "error");
+            return;
+          }
+        }
+
         const endpoint = currentMode === "login" ? "/api/auth/login" : "/api/auth/register";
+
         try {
           submitBtn.disabled = true;
           submitBtn.textContent = currentMode === "login" ? "Signing in..." : "Creating account...";
+
           const response = await fetch(endpoint, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ username, password })
           });
+
           const result = await response.json();
-          if (!result.ok) { showMessage(result.error || "Authentication failed.", "error"); return; }
+
+          if (!result.ok) {
+            showMessage(result.error || "Authentication failed.", "error");
+            return;
+          }
+
           showMessage(result.message || "Success.", "success");
           authForm.reset();
-          if (currentMode === "register") confirmPasswordGroup.classList.remove("hidden");
+
+          if (currentMode === "register") {
+            confirmPasswordGroup.classList.remove("hidden");
+          }
+
           await refreshSession();
-          setTimeout(() => { window.location.href = "/dashboard"; }, 900);
+          setTimeout(() => {
+            window.location.href = "/dashboard";
+          }, 900);
+
         } catch {
           showMessage("Request failed. Please try again.", "error");
         } finally {
@@ -320,13 +470,36 @@
       });
     }
 
+    function setupAvatarMenu() {
+      navAvatarBtn.addEventListener("click", (event) => {
+        event.stopPropagation();
+        const isOpen = navAvatarMenu.classList.toggle("open");
+        navAvatarBtn.setAttribute("aria-expanded", isOpen ? "true" : "false");
+        navAvatarMenu.setAttribute("aria-hidden", isOpen ? "false" : "true");
+      });
+
+      document.addEventListener("click", (event) => {
+        if (!navAvatarMenu.contains(event.target) && !navAvatarBtn.contains(event.target)) {
+          navAvatarMenu.classList.remove("open");
+          navAvatarBtn.setAttribute("aria-expanded", "false");
+          navAvatarMenu.setAttribute("aria-hidden", "true");
+        }
+      });
+    }
+
     function setupLogout() {
-      logoutBtn.addEventListener("click", async () => {
+      navLogoutBtn.addEventListener("click", async () => {
         clearMessage();
+
         try {
           const response = await fetch("/api/auth/logout", { method: "POST" });
           const result = await response.json();
-          if (!result.ok) { showMessage(result.error || "Logout failed.", "error"); return; }
+
+          if (!result.ok) {
+            showMessage(result.error || "Logout failed.", "error");
+            return;
+          }
+
           showMessage("Logged out successfully.", "success");
           await refreshSession();
           setMode("login");
@@ -340,22 +513,38 @@
       try {
         const response = await fetch("/api/auth/me");
         const result = await response.json();
+
         if (result.authenticated && result.user) {
-          sessionStatus.textContent = "Signed in";
-          sessionStatus.className = "session-status signed-in";
-          sessionText.innerHTML = `Current user: <span class="session-user">${escapeHtml(result.user.username)}</span>`;
-          logoutBtn.classList.remove("hidden");
+          navAvatarUsername.textContent = result.user.username || "User";
+          navAvatarSubtext.textContent = "Signed in";
+          navLogoutBtn.classList.remove("hidden");
+          renderAvatar(result.user.avatar_url || null);
         } else {
-          sessionStatus.textContent = "Guest session";
-          sessionStatus.className = "session-status guest";
-          sessionText.textContent = "No user is currently signed in.";
-          logoutBtn.classList.add("hidden");
+          navAvatarUsername.textContent = "Guest";
+          navAvatarSubtext.textContent = "Not signed in";
+          navLogoutBtn.classList.add("hidden");
+          renderAvatar(null);
         }
       } catch {
-        sessionStatus.textContent = "Unknown";
-        sessionStatus.className = "session-status guest";
-        sessionText.textContent = "Could not load session state.";
-        logoutBtn.classList.add("hidden");
+        navAvatarUsername.textContent = "Guest";
+        navAvatarSubtext.textContent = "Session unavailable";
+        navLogoutBtn.classList.add("hidden");
+        renderAvatar(null);
+      }
+    }
+
+    function renderAvatar(avatarUrl) {
+      if (avatarUrl && String(avatarUrl).trim()) {
+        navAvatarBtn.innerHTML = `<img src="${escapeHtml(avatarUrl)}" alt="User avatar" />`;
+      } else {
+        navAvatarBtn.innerHTML = `
+          <span class="nav-avatar-icon" id="navAvatarFallback">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M20 21a8 8 0 0 0-16 0"></path>
+              <circle cx="12" cy="8" r="4"></circle>
+            </svg>
+          </span>
+        `;
       }
     }
 
@@ -363,12 +552,19 @@
       messageBox.textContent = message;
       messageBox.className = `message-box ${type}`;
     }
+
     function clearMessage() {
       messageBox.textContent = "";
       messageBox.className = "message-box";
     }
+
     function escapeHtml(value) {
-      return String(value).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
     }
   </script>
 </body>
