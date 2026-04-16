@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import math
+from ml_predictor import predict_station_bikes
+
 import os
 import re
 import datetime as dt
@@ -371,6 +374,93 @@ def fetch_forecast_live_days(max_days: int = 5) -> Dict[str, Any]:
     return {"days": days}
 
 
+def fetch_forecast_live_points(limit: int = 12) -> List[Dict[str, Any]]:
+    raw = http_get_json(
+        OWM_FORECAST_3H_URL,
+        {
+            "lat": LAT,
+            "lon": LON,
+            "appid": get_owm_key(),
+            "units": "metric",
+        },
+    )
+
+    rows: List[Dict[str, Any]] = []
+
+    for item in raw.get("list", [])[:limit]:
+        main = item.get("main", {}) or {}
+        weather_list = item.get("weather", []) or [{}]
+        dt_txt = item.get("dt_txt")
+        target_time = None
+
+        if dt_txt:
+            try:
+                target_time = dt.datetime.strptime(dt_txt, "%Y-%m-%d %H:%M:%S")
+            except Exception:
+                target_time = None
+
+        rows.append(
+            {
+                "target_time": target_time,
+                "temp": main.get("temp"),
+                "humidity": main.get("humidity"),
+                "pressure": main.get("pressure"),
+                "rain_prob": item.get("pop", 0),
+                "weather_main": weather_list[0].get("main"),
+                "weather_description": weather_list[0].get("description"),
+            }
+        )
+
+    return rows
+
+
+def build_prediction_weather_inputs(hours: int = 4) -> List[Dict[str, Any]]:
+    now = dt.datetime.utcnow()
+    current_weather = fetch_current_live()
+    forecast_points = fetch_forecast_live_points(limit=12)
+
+    candidates: List[Dict[str, Any]] = [
+        {
+            "target_time": now,
+            "temp": current_weather.get("temp"),
+            "humidity": current_weather.get("humidity"),
+            "pressure": current_weather.get("pressure"),
+            "rain_prob": 0,
+            "weather_main": current_weather.get("weather_main"),
+            "weather_description": current_weather.get("weather_description"),
+        }
+    ]
+
+    for point in forecast_points:
+        if point.get("target_time") is not None:
+            candidates.append(point)
+
+    weather_inputs: List[Dict[str, Any]] = []
+
+    for hour_offset in range(1, hours + 1):
+        wanted_time = now + dt.timedelta(hours=hour_offset)
+
+        best = min(
+            candidates,
+            key=lambda row: abs((row["target_time"] - wanted_time).total_seconds())
+        )
+
+        weather_inputs.append(
+            {
+                "hour_offset": hour_offset,
+                "target_time": wanted_time,
+                "temp": best.get("temp") if best.get("temp") is not None else current_weather.get("temp", 0),
+                "humidity": best.get("humidity") if best.get("humidity") is not None else current_weather.get("humidity", 0),
+                "pressure": best.get("pressure") if best.get("pressure") is not None else current_weather.get("pressure", 0),
+                "rain_prob": best.get("rain_prob", 0),
+                "weather_main": best.get("weather_main"),
+                "weather_description": best.get("weather_description"),
+            }
+        )
+
+    return weather_inputs
+
+
 # -----------------------------
 # DB init helpers
 # -----------------------------
@@ -543,6 +633,40 @@ def api_bike_history():
         "count": len(rows),
         "rows": rows
     })
+
+
+@app.get("/api/predict/station/<int:station_id>")
+def api_predict_station(station_id: int):
+    try:
+        hours = int(request.args.get("hours", "4"))
+        hours = max(1, min(hours, 24))
+
+        station = get_station_snapshot(station_id)
+        if not station:
+            return jsonify({"ok": False, "error": "Station not found."}), 404
+
+        capacity = int(station.get("capacity") or 0)
+        weather_inputs = build_prediction_weather_inputs(hours=hours)
+
+        predictions = predict_station_bikes(
+            station_id=station_id,
+            capacity=capacity,
+            weather_inputs=weather_inputs,
+        )
+
+        return jsonify(
+            {
+                "ok": True,
+                "station_id": station_id,
+                "station_name": station.get("name"),
+                "capacity": capacity,
+                "predictions": predictions,
+            }
+        )
+    except FileNotFoundError as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
 
 
 @app.get("/api/db/bikes/hourly_avg/<int:station_id>")
