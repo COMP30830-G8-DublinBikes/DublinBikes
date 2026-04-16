@@ -848,18 +848,11 @@ async function loadHistory(stationId) {
 
 async function loadPredictions(stationId, hours = 24) {
   try {
-    // 將網址改為後端存在的路徑
-    const url = `/api/db/bikes/hourly_avg/${stationId}?hours=${hours}`;
+    const url = `/api/predict/station/${stationId}?hours=${hours}`;
     const response = await fetch(url);
-    
-    // 檢查回傳是否成功
-    if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-    }
+    const result = await response.json();  // ← 這行漏掉了
 
-    const result = await response.json();
-
-    if (!result.ok) {
+    if (!response.ok || !result.ok) {
       renderPredictionEmpty(result.error || "Prediction data unavailable.");
       return;
     }
