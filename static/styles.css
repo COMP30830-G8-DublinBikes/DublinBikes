@@ -194,6 +194,83 @@ img, svg { display: block; max-width: 100%; }
   flex-wrap: wrap;
 }
 
+.g8-nav-toggle {
+  display: none;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #fff;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 5px;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: 0.15s ease;
+  padding: 0;
+}
+
+.g8-nav-toggle:hover {
+  background: var(--bg);
+}
+
+.g8-nav-toggle span {
+  display: block;
+  width: 18px;
+  height: 2px;
+  border-radius: 999px;
+  background: var(--text);
+  transition: 0.2s ease;
+}
+
+.g8-nav-toggle.open span:nth-child(1) {
+  transform: translateY(7px) rotate(45deg);
+}
+
+.g8-nav-toggle.open span:nth-child(2) {
+  opacity: 0;
+}
+
+.g8-nav-toggle.open span:nth-child(3) {
+  transform: translateY(-7px) rotate(-45deg);
+}
+
+.g8-mobile-menu {
+  display: none;
+  margin-top: -12px;
+  margin-bottom: 18px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.97);
+  border: 1px solid var(--line);
+  border-radius: var(--r-xl);
+  box-shadow: var(--shadow-md);
+}
+
+.g8-mobile-menu a {
+  display: block;
+  padding: 12px 14px;
+  border-radius: var(--r-lg);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--muted);
+  transition: 0.15s ease;
+}
+
+.g8-mobile-menu a:hover {
+  background: var(--brand-pale);
+  color: var(--brand);
+}
+
+.g8-mobile-menu a.active {
+  background: var(--brand-pale);
+  color: var(--brand);
+}
+
+.g8-mobile-menu.open {
+  display: block;
+}
+
 /* ── Buttons ─────────────────────────────────────── */
 .btn,
 .btn-outline,
@@ -916,7 +993,30 @@ img, svg { display: block; max-width: 100%; }
 }
 
 @media (max-width: 720px) {
-  .g8-nav-links { display: none; }
+  .g8-nav {
+    gap: 10px;
+    flex-wrap: nowrap;
+  }
+
+  .g8-nav-links {
+    display: none;
+  }
+
+  .g8-nav-toggle {
+    display: inline-flex;
+  }
+
+  .g8-nav-actions {
+    margin-left: auto;
+    gap: 8px;
+    flex-wrap: nowrap;
+  }
+
+  .nav-signin-link {
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+
   .hero-content { padding: 24px; }
   .features-grid { grid-template-columns: 1fr; }
   .steps-flow { flex-direction: column; gap: 20px; }
@@ -924,7 +1024,6 @@ img, svg { display: block; max-width: 100%; }
   .weather-strip { flex-direction: column; align-items: flex-start; }
   .cta-banner { padding: 24px; }
 }
-
 
 
 /* ============================================================

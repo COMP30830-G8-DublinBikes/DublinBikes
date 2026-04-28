@@ -11,7 +11,26 @@ document.addEventListener("DOMContentLoaded", () => {
     const navAvatarUsername = document.getElementById("navAvatarUsername");
     const navAvatarSubtext = document.getElementById("navAvatarSubtext");
     const navLogoutBtn = document.getElementById("navLogoutBtn");
+    const navToggleBtn = document.getElementById("navToggleBtn");
+    const mobileNavMenu = document.getElementById("mobileNavMenu");
 
+
+    function closeAvatarMenu() {
+        if (navAvatarMenu) navAvatarMenu.classList.remove("open");
+        if (navAvatarBtn) navAvatarBtn.setAttribute("aria-expanded", "false");
+    }
+    
+    function closeMobileMenu() {
+        if (mobileNavMenu) {
+            mobileNavMenu.classList.remove("open");
+            mobileNavMenu.hidden = true;
+        }
+        if (navToggleBtn) {
+            navToggleBtn.classList.remove("open");
+            navToggleBtn.setAttribute("aria-expanded", "false");
+        }
+    }
+    
     // --- 1. 頭像選單開關邏輯 ---
     if (navAvatarBtn && navAvatarMenu) {
         navAvatarBtn.addEventListener("click", (e) => {
@@ -19,15 +38,49 @@ document.addEventListener("DOMContentLoaded", () => {
             const isOpen = navAvatarMenu.classList.toggle("open");
             navAvatarBtn.setAttribute("aria-expanded", isOpen);
         });
+    }
 
-        // 點擊選單以外的地方自動關閉
-        document.addEventListener("click", (e) => {
-            if (!navAvatarMenu.contains(e.target)) {
-                navAvatarMenu.classList.remove("open");
-                navAvatarBtn.setAttribute("aria-expanded", "false");
+    // --- 1.1 手機導覽選單開關 ---
+    if (navToggleBtn && mobileNavMenu) {
+        navToggleBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            const willOpen = mobileNavMenu.hidden || !mobileNavMenu.classList.contains("open");
+
+            if (willOpen) {
+                mobileNavMenu.hidden = false;
+                mobileNavMenu.classList.add("open");
+                navToggleBtn.classList.add("open");
+                navToggleBtn.setAttribute("aria-expanded", "true");
+            } else {
+                closeMobileMenu();
+            }
+        });
+        
+        mobileNavMenu.addEventListener("click", (e) => {
+            e.stopPropagation();
+        });
+
+        window.addEventListener("resize", () => {
+            if (window.innerWidth > 720) {
+                closeMobileMenu();
             }
         });
     }
+
+    // 點擊選單以外的地方自動關閉
+    document.addEventListener("click", (e) => {
+        if (navAvatarMenu && navAvatarBtn) {
+            if (!navAvatarMenu.contains(e.target) && !navAvatarBtn.contains(e.target)) {
+                closeAvatarMenu();
+            }
+        }
+
+        if (mobileNavMenu && navToggleBtn) {
+            if (!mobileNavMenu.contains(e.target) && !navToggleBtn.contains(e.target)) {
+                closeMobileMenu();
+            }
+        }
+    });
 
     // --- 2. 登入狀態檢查 (向後端 API 確認) ---
     async function checkLoginStatus() {
