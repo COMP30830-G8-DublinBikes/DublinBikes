@@ -22,13 +22,26 @@ from werkzeug.security import generate_password_hash, check_password_hash
 # -----------------------------
 # App
 # -----------------------------
-app = Flask(__name__)
+base_dir = os.path.abspath(os.path.dirname(__file__))
+
+app = Flask(
+    __name__,
+    static_folder=os.path.join(base_dir, "static"),
+    template_folder=os.path.join(base_dir, "templates")
+)
+
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "dev-secret-key-change-in-production")
 
 app.config.update(
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE="Lax",
 )
+with app.app_context():
+    try:
+        ensure_users_table()
+        print("✅ Database initialized")
+    except Exception as e:
+        print(f"⚠️ DB Init skipped: {e}")
 
 
 # -----------------------------
@@ -159,9 +172,15 @@ def exec_sql(sql: str, params: Optional[tuple] = None) -> int:
 
 
 def http_get_json(url: str, params: Dict[str, Any]) -> Any:
-    response = requests.get(url, params=params, timeout=20)
-    response.raise_for_status()
-    return response.json()
+    try:
+        # 缩短超时到 5 秒，防止 API 连不上时网页卡死
+        response = requests.get(url, params=params, timeout=5)
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        print(f"❌ API Fetch Error: {e}")
+        # 返回空字典，确保前端 JS 拿到数据结构
+        return {}
 
 
 def get_google_maps_key() -> str:
@@ -1063,15 +1082,9 @@ Please answer in clear English. Keep the answer grounded in the data above and f
 # -----------------------------
 # Main
 # -----------------------------
-with app.app_context():
-    try:
-        ensure_users_table()
-        print("✅ Database initialized successfully.")
-    except Exception as e:
-        print(f"❌ DB Init Error: {e}")
 if __name__ == "__main__":
     debug_mode = os.getenv("FLASK_DEBUG", "0") == "1"
-    host = os.getenv("FLASK_RUN_HOST", "0.0.0.0") 
+    host = os.getenv("FLASK_RUN_HOST", "0.0.0.0")
     port = int(os.getenv("PORT", "5000"))
 
     app.run(host=host, port=port, debug=debug_mode)
