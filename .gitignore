@@ -19,3 +19,5 @@ data/
 # OS / editor
 .DS_Store
 .vscode/
+
+bike_model.pkl
