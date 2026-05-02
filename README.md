@@ -80,7 +80,7 @@ Users can create an account or sign in through the authentication pages. After s
 
 - **Homepage**
   - Mockup:
-    ![screenshot](/docs/mockup/g8bikeshare-mockup.png)
+    ![screenshot](/docs/mockup/dublinbikes-mockup.png)
   - Final:
     ![screenshot](/docs/features/homepage-final.png)
 
@@ -104,7 +104,7 @@ G8BikeShare includes a machine learning component that predicts the number of av
 |---|---|---|
 | Linear Regression | 8.14 | 0.00 |
 | Decision Tree | 1.02 | 0.93 |
-| **Random Forest** ✅ | **0.98** | **0.97** |
+| **Random Forest** ☑️ | **0.98** | **0.97** |
 | XGBoost | 5.43 | 0.52 |
 
 **Random Forest** was selected as the final model for its lowest MAE (< 1 bike average error) and highest R² score, offering the best balance of accuracy, stability, and deployment suitability. Training occurs offline; dashboard predictions are fast enough for interactive use.
