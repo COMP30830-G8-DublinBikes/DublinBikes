@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- To scale based on the device -->
+    <title>{{ title }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}"> <!-- This is resolved by Flask -->
+</head>
+<body>
+    <h1>Welcome to {{ title }}</h1>
+    <p>This is the homepage of the Flask app.</p>
+    <!--
+    Using url_for:
+    When you call url_for('about'), Flask looks for a route that corresponds to the about view function.
+    It then generates the correct URL for that route, which in this case is /about.
+    -->
+
+    <a href="{{ url_for('about') }}">Go to About Page</a>
+</body>
+</html>
