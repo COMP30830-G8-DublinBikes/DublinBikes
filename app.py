@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import math
+from ml_predictor import predict_station_bikes
+
 import os
 import re
 import datetime as dt
@@ -19,13 +22,26 @@ from werkzeug.security import generate_password_hash, check_password_hash
 # -----------------------------
 # App
 # -----------------------------
-app = Flask(__name__)
+base_dir = os.path.abspath(os.path.dirname(__file__))
+
+app = Flask(
+    __name__,
+    static_folder=os.path.join(base_dir, "static"),
+    template_folder=os.path.join(base_dir, "templates")
+)
+
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "dev-secret-key-change-in-production")
 
 app.config.update(
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE="Lax",
 )
+with app.app_context():
+    try:
+        ensure_users_table()
+        print("✅ Database initialized")
+    except Exception as e:
+        print(f"⚠️ DB Init skipped: {e}")
 
 
 # -----------------------------
@@ -156,9 +172,15 @@ def exec_sql(sql: str, params: Optional[tuple] = None) -> int:
 
 
 def http_get_json(url: str, params: Dict[str, Any]) -> Any:
-    response = requests.get(url, params=params, timeout=20)
-    response.raise_for_status()
-    return response.json()
+    try:
+        # 缩短超时到 5 秒，防止 API 连不上时网页卡死
+        response = requests.get(url, params=params, timeout=5)
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        print(f"❌ API Fetch Error: {e}")
+        # 返回空字典，确保前端 JS 拿到数据结构
+        return {}
 
 
 def get_google_maps_key() -> str:
@@ -371,6 +393,93 @@ def fetch_forecast_live_days(max_days: int = 5) -> Dict[str, Any]:
     return {"days": days}
 
 
+def fetch_forecast_live_points(limit: int = 12) -> List[Dict[str, Any]]:
+    raw = http_get_json(
+        OWM_FORECAST_3H_URL,
+        {
+            "lat": LAT,
+            "lon": LON,
+            "appid": get_owm_key(),
+            "units": "metric",
+        },
+    )
+
+    rows: List[Dict[str, Any]] = []
+
+    for item in raw.get("list", [])[:limit]:
+        main = item.get("main", {}) or {}
+        weather_list = item.get("weather", []) or [{}]
+        dt_txt = item.get("dt_txt")
+        target_time = None
+
+        if dt_txt:
+            try:
+                target_time = dt.datetime.strptime(dt_txt, "%Y-%m-%d %H:%M:%S")
+            except Exception:
+                target_time = None
+
+        rows.append(
+            {
+                "target_time": target_time,
+                "temp": main.get("temp"),
+                "humidity": main.get("humidity"),
+                "pressure": main.get("pressure"),
+                "rain_prob": item.get("pop", 0),
+                "weather_main": weather_list[0].get("main"),
+                "weather_description": weather_list[0].get("description"),
+            }
+        )
+
+    return rows
+
+
+def build_prediction_weather_inputs(hours: int = 4) -> List[Dict[str, Any]]:
+    now = dt.datetime.utcnow()
+    current_weather = fetch_current_live()
+    forecast_points = fetch_forecast_live_points(limit=12)
+
+    candidates: List[Dict[str, Any]] = [
+        {
+            "target_time": now,
+            "temp": current_weather.get("temp"),
+            "humidity": current_weather.get("humidity"),
+            "pressure": current_weather.get("pressure"),
+            "rain_prob": 0,
+            "weather_main": current_weather.get("weather_main"),
+            "weather_description": current_weather.get("weather_description"),
+        }
+    ]
+
+    for point in forecast_points:
+        if point.get("target_time") is not None:
+            candidates.append(point)
+
+    weather_inputs: List[Dict[str, Any]] = []
+
+    for hour_offset in range(1, hours + 1):
+        wanted_time = now + dt.timedelta(hours=hour_offset)
+
+        best = min(
+            candidates,
+            key=lambda row: abs((row["target_time"] - wanted_time).total_seconds())
+        )
+
+        weather_inputs.append(
+            {
+                "hour_offset": hour_offset,
+                "target_time": wanted_time,
+                "temp": best.get("temp") if best.get("temp") is not None else current_weather.get("temp", 0),
+                "humidity": best.get("humidity") if best.get("humidity") is not None else current_weather.get("humidity", 0),
+                "pressure": best.get("pressure") if best.get("pressure") is not None else current_weather.get("pressure", 0),
+                "rain_prob": best.get("rain_prob", 0),
+                "weather_main": best.get("weather_main"),
+                "weather_description": best.get("weather_description"),
+            }
+        )
+
+    return weather_inputs
+
+
 # -----------------------------
 # DB init helpers
 # -----------------------------
@@ -543,6 +652,40 @@ def api_bike_history():
         "count": len(rows),
         "rows": rows
     })
+
+
+@app.get("/api/predict/station/<int:station_id>")
+def api_predict_station(station_id: int):
+    try:
+        hours = int(request.args.get("hours", "4"))
+        hours = max(1, min(hours, 24))
+
+        station = get_station_snapshot(station_id)
+        if not station:
+            return jsonify({"ok": False, "error": "Station not found."}), 404
+
+        capacity = int(station.get("capacity") or 0)
+        weather_inputs = build_prediction_weather_inputs(hours=hours)
+
+        predictions = predict_station_bikes(
+            station_id=station_id,
+            capacity=capacity,
+            weather_inputs=weather_inputs,
+        )
+
+        return jsonify(
+            {
+                "ok": True,
+                "station_id": station_id,
+                "station_name": station.get("name"),
+                "capacity": capacity,
+                "predictions": predictions,
+            }
+        )
+    except FileNotFoundError as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
 
 
 @app.get("/api/db/bikes/hourly_avg/<int:station_id>")
@@ -893,12 +1036,8 @@ Your job:
 Current weather:
 - Temperature: {weather.get('temp')} °C
 - Feels like: {weather.get('feels_like')} °C
-- Humidity: {weather.get('humidity')} %
-- Wind speed: {weather.get('wind_speed')} m/s
-- Main condition: {weather.get('weather_main')}
 - Description: {weather.get('weather_description')}
 - Rain 1h: {weather.get('rain_1h')}
-- Snow 1h: {weather.get('snow_1h')}
 
 {selected_station_block}
 
@@ -944,10 +1083,8 @@ Please answer in clear English. Keep the answer grounded in the data above and f
 # Main
 # -----------------------------
 if __name__ == "__main__":
-    ensure_users_table()
-
-    debug_mode = os.getenv("FLASK_DEBUG", "1") == "1"
-    host = os.getenv("FLASK_RUN_HOST", "127.0.0.1")
+    debug_mode = os.getenv("FLASK_DEBUG", "0") == "1"
+    host = os.getenv("FLASK_RUN_HOST", "0.0.0.0")
     port = int(os.getenv("PORT", "5000"))
 
     app.run(host=host, port=port, debug=debug_mode)
