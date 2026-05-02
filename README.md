@@ -80,13 +80,13 @@ Users can create an account or sign in through the authentication pages. After s
 
 - **Homepage**
   - Mockup:
-    ![screenshot](/docs/mockup/dublinbikes-mockup.png)
+    ![screenshot](/docs/features/dublinbikes-mockup.png)
   - Final:
     ![screenshot](/docs/features/homepage-final.png)
 
 - **Map (Find a Bike)**
   - Mockup:
-    ![screenshot](/docs/mockup/map-mockup.png)
+    ![screenshot](/docs/features/map-mockup.png)
   - Final:
     ![screenshot](/docs/features/map-final.png)
 
