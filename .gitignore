@@ -1,2 +1,4 @@
 dbinfo.py
 *.pem
+dbinfo_hardy.py
+bike_model.pkl
