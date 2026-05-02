@@ -1,9 +1,2 @@
 Flask
-requests
-PyMySQL
-cryptography
-Werkzeug
-python-dotenv
-google-generativeai
-gunicorn
-sqlalchemy
+
